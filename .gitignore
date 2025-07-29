@@ -1,0 +1,41 @@
+# Model dosyaları
+*.pt
+*.pth
+*.h5
+*.ckpt
+
+# Veri setleri ve görseller
+/dataset/
+/data/
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+
+# Geçici ve çıktı dosyaları
+*.log
+*.tmp
+*.out
+*.csv
+*.tsv
+
+# Notebook checkpointleri
+.ipynb_checkpoints/
+
+# Python cache ve derleme dosyaları
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ortam dosyaları
+.env
+.venv/
+venv/
+ENV/
+
+# IDE dosyaları
+.vscode/
+.idea/

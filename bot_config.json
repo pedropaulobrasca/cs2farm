@@ -1,0 +1,22 @@
+{
+    "model_path": "runs\\detect\\cs2_model2\\weights\\best.pt",
+    "confidence_threshold": 0.4,
+    "rotation_speed": 1.0,
+    "aim_speed": 0.5,
+    "fov_x": 70,
+    "fov_y": 40,
+    "headshot_offset": -10,
+    "aim_smoothness": 2.0,
+    "recoil_control": true,
+    "target_enemies_only": true,
+    "burst_fire": true,
+    "burst_size": 3,
+    "burst_delay": 0.3,
+    "auto_reload": true,
+    "reload_ammo_threshold": 5,
+    "hotkeys": {
+        "toggle": "f6",
+        "pause": "f7",
+        "stop": "f8"
+    }
+}
