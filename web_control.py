@@ -17,6 +17,7 @@ import sys
 
 # Kendi modüllerimizi import ediyoruz
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from cs2_aimbot import CS2Aimbot
 from cs2_advanced_bot import CS2AdvancedBot
 
 # Logging ayarları
