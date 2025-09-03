@@ -1,111 +1,111 @@
-# CS2 Farm Bot ve Yönetim Sistemi
+# Bot de Farm e Sistema de Gerenciamento CS2
 
-Bu proje, CS2 oyununda tam otomatik XP farming, drop talep etme ve ekran görüntüsü alma gibi işlemleri yapabilen bir sistemdir. YOLOv8 tabanlı görüntü işleme kullanarak rakipleri tespit eder, hedefler ve yüksek hassasiyetle ateş eder.
+Este projeto é um sistema que pode realizar farming de XP totalmente automático, solicitar drops e capturar telas no jogo CS2. Usando processamento de imagem baseado em YOLOv8, ele detecta inimigos, mira e atira com alta precisão.
 
-## Özellikler
+## Recursos
 
-- **YOLOv8 Nesne Tespiti**: Özel eğitilmiş modelinizi kullanarak oyuncu tespiti
-- **Özerk Çalışma**: Kullanıcı girdisi olmadan düşmanları taramak, hedef almak ve ateş etmek için otomatik döndürme
-- **Akıllı Hedef Seçimi**: Mesafe, boyut ve güven düzeyine dayalı öncelikli hedefler
-- **Geri Tepme Kontrolü**: Silah geri tepmesini kontrol etmek için kompanse edici fare hareketleri
-- **Burst Atış Modu**: Daha gerçekçi atış desenleri için yapılandırılabilir seri atış boyutu ve gecikmesi
-- **Ayarlanabilir Parametreler**: Tüm parametreleri yapılandırma dosyası üzerinden kolayca ayarlama
-- **Oturum İstatistikleri**: Performansı izler ve ayrıntılı günlükler kaydeder
-- **Tam AFK Çalışma**: Tamamen gözetimsiz çalışır
-- **Web Tabanlı Yönetim**: Çoklu VM yönetimi için web arayüzü
-- **VM Entegrasyonu**: Hyper-V sanal makineleri ile entegrasyon
+- **Detecção de Objetos YOLOv8**: Detecção de jogadores usando seu modelo personalizado treinado
+- **Operação Autônoma**: Rotação automática para buscar, mirar e atirar em inimigos sem entrada do usuário
+- **Seleção Inteligente de Alvos**: Alvos priorizados com base em distância, tamanho e nível de confiança
+- **Controle de Recuo**: Movimentos compensatórios do mouse para controlar o recuo da arma
+- **Modo de Tiro em Rajada**: Tamanho de rajada e atraso configuráveis para padrões de tiro mais realistas
+- **Parâmetros Ajustáveis**: Configure facilmente todos os parâmetros através do arquivo de configuração
+- **Estatísticas da Sessão**: Rastreia o desempenho e registra logs detalhados
+- **Operação AFK Completa**: Funciona completamente sem supervisão
+- **Gerenciamento Baseado na Web**: Interface web para gerenciamento de múltiplas VMs
+- **Integração com VM**: Integração com máquinas virtuais Hyper-V
 
-## Sistem Bileşenleri
+## Componentes do Sistema
 
-Proje üç ana bileşenden oluşur:
+O projeto consiste em três componentes principais:
 
-1. **CS2 Bot (cs2_aimbot.py ve cs2_advanced_bot.py)**
-   - YOLOv8 tabanlı hedef tespiti
-   - Hassas nişan alma ve ateş etme mekanizmaları
-   - Gelişmiş silah geri tepme kontrolü
-   - Hareket tahmini ve izleme
+1. **Bot CS2 (cs2_aimbot.py e cs2_advanced_bot.py)**
+   - Detecção de alvos baseada em YOLOv8
+   - Mecanismos precisos de mira e disparo
+   - Controle avançado de recuo de armas
+   - Previsão de movimento e rastreamento
 
-2. **Web Kontrol Paneli (web_control.py)**
-   - Flask tabanlı web arayüzü
-   - VM ve bot yönetimi
-   - Kullanıcı yönetimi ve kimlik doğrulama
-   - İş kuyruğu ve durumu izleme
+2. **Painel de Controle Web (web_control.py)**
+   - Interface web baseada em Flask
+   - Gerenciamento de VMs e bots
+   - Gerenciamento de usuários e autenticação
+   - Fila de trabalhos e monitoramento de status
 
-3. **VM İstemcisi (client.py)**
-   - Sunucuyla iletişim
-   - Bot işlerini yerel olarak çalıştırma
-   - Steam ve CS2 otomatik başlatma
-   - Oturum istatistikleri ve ekran görüntüleri
+3. **Cliente VM (client.py)**
+   - Comunicação com o servidor
+   - Execução local de trabalhos do bot
+   - Inicialização automática do Steam e CS2
+   - Estatísticas da sessão e capturas de tela
 
-## Kurulum
+## Instalação
 
-### Sunucu (Web Kontrol Paneli)
+### Servidor (Painel de Controle Web)
 
-1. Gereksinimleri yükleyin:
+1. Instale as dependências:
 ```bash
 pip install Flask flask-login werkzeug psutil requests
 ```
 
-2. Sunucuyu başlatın:
+2. Inicie o servidor:
 ```bash
 python web_control.py
 ```
 
-3. Tarayıcınızda `http://localhost:8000` adresine gidin ve varsayılan kullanıcı adı/şifre ile giriş yapın (admin/admin)
+3. Acesse `http://localhost:8000` no seu navegador e faça login com usuário/senha padrão (admin/admin)
 
-### VM İstemcisi
+### Cliente VM
 
-1. Gereksinimleri yükleyin:
+1. Instale as dependências:
 ```bash
 pip install ultralytics opencv-python numpy pyautogui keyboard mss torch pywin32 requests psutil
 ```
 
-2. YOLOv8 modelinizi `runs\detect\cs2_model2\weights\best.pt` konumuna yerleştirin.
+2. Coloque seu modelo YOLOv8 em `runs\detect\cs2_model2\weights\best.pt`.
 
-3. İstemciyi başlatın:
+3. Inicie o cliente:
 ```bash
-python client.py --server http://localhost:8000 --api-key API_ANAHTARINIZ
+python client.py --server http://localhost:8000 --api-key SUA_CHAVE_API
 ```
 
-## Kullanım
+## Uso
 
-### Web Arayüzünden
+### Pela Interface Web
 
-1. VM'leri yönetin (başlatma, durdurma, yapılandırma)
-2. Bot işleri oluşturun (XP farm, ekran görüntüsü, drop talep etme)
-3. İş durumlarını ve istatistiklerini izleyin
+1. Gerencie VMs (iniciar, parar, configurar)
+2. Crie trabalhos do bot (farm de XP, captura de tela, solicitação de drop)
+3. Monitore status e estatísticas dos trabalhos
 
-### VM Yapılandırması
+### Configuração da VM
 
-VM'ler için `bot_config.json` dosyasını düzenleyerek şu ayarları yapabilirsiniz:
+Você pode configurar as VMs editando o arquivo `bot_config.json` com as seguintes configurações:
 
-- `model_path`: YOLOv8 modelinizin yolu
-- `confidence_threshold`: Düşman tespiti için minimum güven düzeyi (0.0-1.0)
-- `rotation_speed`: Tarama yaparken dönüş hızı
-- `aim_speed`: Fare hareketi hızı çarpanı
-- `fov_x`, `fov_y`: Tespit için görüş alanı (ekranın yüzdesi)
-- `headshot_offset`: Kafadan vuruş için dikey ofset (negatif değerler daha yükseğe nişan alır)
-- `aim_smoothness`: Daha doğal, insan benzeri hareketler için daha yüksek değerler
-- `recoil_control`: Geri tepme telafisini etkinleştir/devre dışı bırak
-- `burst_fire`: Seri atış modunu etkinleştir/devre dışı bırak
-- `burst_size`: Seri başına atış sayısı
-- `burst_delay`: Seriler arasındaki gecikme (saniye)
-- `auto_reload`: Otomatik yeniden doldurmayı etkinleştir/devre dışı bırak
-- `reload_ammo_threshold`: Otomatik yeniden doldurmayı tetikleyecek atış sayısı
+- `model_path`: Caminho para seu modelo YOLOv8
+- `confidence_threshold`: Nível mínimo de confiança para detecção de inimigos (0.0-1.0)
+- `rotation_speed`: Velocidade de rotação durante a varredura
+- `aim_speed`: Multiplicador de velocidade do movimento do mouse
+- `fov_x`, `fov_y`: Campo de visão para detecção (porcentagem da tela)
+- `headshot_offset`: Deslocamento vertical para tiros na cabeça (valores negativos miram mais alto)
+- `aim_smoothness`: Valores mais altos para movimentos mais naturais e humanos
+- `recoil_control`: Ativar/desativar compensação de recuo
+- `burst_fire`: Ativar/desativar modo de tiro em rajada
+- `burst_size`: Número de tiros por rajada
+- `burst_delay`: Atraso entre rajadas (segundos)
+- `auto_reload`: Ativar/desativar recarga automática
+- `reload_ammo_threshold`: Número de tiros para acionar recarga automática
 
-## Önemli Notlar
+## Notas Importantes
 
-- Bu bot yalnızca eğitim amaçlıdır
-- Rekabetçi çevrimiçi oyunlarda bot kullanmak hizmet şartlarını ihlal edebilir
-- Her zaman sorumlu ve etik bir şekilde kullanın
-- Yalnızca özel/çevrimdışı modlarda kullanmayı düşünün
+- Este bot é apenas para fins educacionais
+- Usar bots em jogos online competitivos pode violar os termos de serviço
+- Sempre use de forma responsável e ética
+- Considere usar apenas em modos privados/offline
 
-## YOLOv8 Modelini Özelleştirme
+## Personalizando o Modelo YOLOv8
 
-En iyi tespit performansı için, YOLOv8 modelinizi şunlarla eğitin:
-- Çeşitli oyun içi ekran görüntüleri
-- Farklı karakter modelleri ve haritalar
-- Çeşitli aydınlatma koşulları
-- Farklı silah görünümleri
+Para melhor desempenho de detecção, treine seu modelo YOLOv8 com:
+- Várias capturas de tela do jogo
+- Diferentes modelos de personagens e mapas
+- Condições de iluminação variadas
+- Diferentes visualizações de armas
 
-Bot'un takım arkadaşları ve düşmanlar arasında ayrım yapabilmesi için sınıf etiketlerini dahil etmeyi unutmayın. 
+Não se esqueça de incluir rótulos de classe para que o bot possa diferenciar entre companheiros de equipe e inimigos.
