@@ -12,7 +12,7 @@ from ultralytics import YOLO
 import mss
 import keyboard
 
-# Windows için DirectInput benzeri düşük seviyeli fare kontrolü
+# Controle de mouse de baixo nível similar ao DirectInput para Windows
 class POINT(Structure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
@@ -35,31 +35,31 @@ class InputEmulator:
     
     @staticmethod
     def send_mouse_input_to_game(dx, dy, button=None):
-        """Oyuna doğrudan fare girdisi gönder, normal fare kontrolünü etkileme"""
-        # Extra mouse_event flag: 0x0001 = MOUSEEVENTF_ABSOLUTE
-        # Kullanıcının imlecini hareket ettirmez, sadece oyun içi girdiler gönderir
+        """Envia entrada de mouse diretamente para o jogo, sem afetar o cursor normal"""
+        # Flag extra do mouse_event: 0x0001 = MOUSEEVENTF_ABSOLUTE
+        # Não move o cursor do usuário, apenas envia entradas para o jogo
         
         try:
-            # CS2 penceresini bul
+            # Encontrar a janela do CS2
             hwnd = InputEmulator.get_cs2_window()
             if hwnd == 0:
-                print("CS2 penceresi bulunamadı!")
+                print("Janela do CS2 não encontrada!")
                 return False
             
-            # Absolute koordinatlar için ekran boyutunu al
+            # Obter dimensões da tela para coordenadas absolutas
             user32 = ctypes.windll.user32
             user32.SendMessageW(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(int(dx), int(dy)))
             
-            # Fare tuşu girdisi gönder
+            # Enviar entrada do botão do mouse
             if button == "left":
-                # Fare sol tuşu bas ve bırak
+                # Pressionar e soltar botão esquerdo do mouse
                 user32.SendMessageW(hwnd, win32con.WM_LBUTTONDOWN, 0, 0)
                 time.sleep(0.05)
                 user32.SendMessageW(hwnd, win32con.WM_LBUTTONUP, 0, 0)
             
             return True
         except Exception as e:
-            print(f"Fare girdisi gönderilemedi: {e}")
+            print(f"Não foi possível enviar entrada do mouse: {e}")
             return False
 
 class CS2Aimbot:
@@ -77,8 +77,8 @@ class CS2Aimbot:
         self.aim_delay = 0.001          # Almost no delay
         
         # Shooting control
-        self.auto_shoot = True          # Otomatik ateş etmeyi etkinleştir
-        self.shoot_delay = 0.1          # Atışlar arasındaki gecikme
+        self.auto_shoot = True          # Habilitar disparo automático
+        self.shoot_delay = 0.1          # Atraso entre os disparos
 
         # Enhanced recoil control patterns
         self.recoil_patterns = {
@@ -215,15 +215,15 @@ class CS2Aimbot:
         scored_targets = []
         current_time = time.time()
         
-        # CS2'de hedef tespitini güçlendir
-        print(f"Detected {len(targets)} potential targets")
+        # Fortalecer detecção de alvo no CS2
+        print(f"Detectados {len(targets)} alvos potenciais")
         
         for i, target in enumerate(targets):
             x1, y1, x2, y2 = target["xyxy"]
             confidence = target["confidence"]
             
-            # Debug her hedefi yazdır
-            print(f"Target {i}: conf={confidence:.2f}, pos=({int(x1)},{int(y1)})→({int(x2)},{int(y2)})")
+            # Debug imprimir cada alvo
+            print(f"Alvo {i}: conf={confidence:.2f}, pos=({int(x1)},{int(y1)})→({int(x2)},{int(y2)})")
             
             # Precise box center calculation
             box_width = x2 - x1
@@ -251,8 +251,8 @@ class CS2Aimbot:
             box_size = box_width * box_height
             normalized_size = box_size / (frame_width * frame_height)
             
-            # CS2: Hedef merkeze ne kadar yakınsa o kadar öncelikli
-            center_bonus = 1.0 - (normalized_dist * 2)  # Center proximity bonus
+            # CS2: Quanto mais próximo do centro, maior a prioridade
+            center_bonus = 1.0 - (normalized_dist * 2)  # Bônus de proximidade do centro
             
             # Movement detection (if tracking is enabled)
             movement_penalty = 0
@@ -279,8 +279,8 @@ class CS2Aimbot:
                         movement_penalty = movement_speed * self.priority_zones["movement"]
                         break
             
-            # Calculate priority score (lower is better) - CS2 için optimize edilmiş
-            # Balance multiple factors for optimal target selection
+            # Calcular pontuação de prioridade (menor é melhor) - otimizado para CS2
+            # Equilibrar múltiplos fatores para seleção ótima de alvo
             priority_score = (
                 distance_head * 0.4 -                           # Head distance (primary factor)
                 normalized_size * 120 +                         # Size bonus (bigger targets better)
@@ -313,8 +313,8 @@ class CS2Aimbot:
         
         if scored_targets:
             best = scored_targets[0]
-            print(f"Best target: {best['index']} with priority {best['priority']:.2f}")
-            print(f"Distance from crosshair: {best['distance']:.2f} pixels")
+            print(f"Melhor alvo: {best['index']} com prioridade {best['priority']:.2f}")
+            print(f"Distância da mira: {best['distance']:.2f} pixels")
         
         # Update target memory for tracking
         if scored_targets and self.movement_prediction:
@@ -390,9 +390,9 @@ class CS2Aimbot:
             
         # Human-like adaptive smooth curve movement
         steps = int(self.aim_smoothness)
-        # Sıfıra bölme hatasını önle
+        # Prevenir erro de divisão por zero
         if steps <= 1:
-            steps = 2  # En az 2 adım olsun
+            steps = 2  # Pelo menos 2 passos
         
         # Bezier curve-like movement - more natural than linear
         # Accelerates, then decelerates for human-like movement pattern
@@ -464,7 +464,7 @@ class CS2Aimbot:
         if not target:
             return False
             
-        # Check if aiming is precise enough - daha hoşgörülü
+        # Verificar se a mira é precisa o suficiente - mais tolerante
         precise_aim = (abs(target["dx_head"]) < self.target_lock_threshold * 1.5 and 
                       abs(target["dy_head"]) < self.target_lock_threshold * 1.5)
         
@@ -477,13 +477,13 @@ class CS2Aimbot:
             
             if is_distant_target:
                 # For distant targets, use tap firing (more accurate)
-                if now - self.last_shot_time < 0.25:  # Daha hızlı (was 0.4)
+                if now - self.last_shot_time < 0.25:  # Mais rápido (era 0.4)
                     return False
             else:
                 # For closer targets, use burst fire
                 if self.shots_fired >= self.burst_size:
                     # Wait for burst delay before firing again
-                    if now - self.last_shot_time < self.burst_delay * 0.7:  # Daha hızlı
+                    if now - self.last_shot_time < self.burst_delay * 0.7:  # Mais rápido
                         return False
                     else:
                         # Reset burst counter after delay
@@ -493,7 +493,7 @@ class CS2Aimbot:
         return precise_aim
     
     def aim_at_target(self, frame, return_annotated=False):
-        """Main function to detect, aim, and shoot at targets"""
+        """Função principal para detectar, mirar e atirar em alvos"""
         if self.model is None:
             return None
             
@@ -512,34 +512,34 @@ class CS2Aimbot:
             delta_x, delta_y = self.calculate_aim_point(best_target, frame_width, frame_height)
             
             # Log aiming information
-            print(f"Aiming: Moving mouse by dx={delta_x}, dy={delta_y}")
+            print(f"Mirando: Movendo mouse por dx={delta_x}, dy={delta_y}")
             
-            # Smooth aim movement for human-like motion
-            if abs(delta_x) > 1 or abs(delta_y) > 1:  # Only move if significant distance
+            # Movimento de mira suave para movimento humano
+            if abs(delta_x) > 1 or abs(delta_y) > 1:  # Mover apenas se distância significativa
                 try:
-                    # Doğrudan mouse kontrolü için daha güvenilir 
+                    # Mais confiável para controle direto do mouse
                     self.mouse_move(delta_x, delta_y)
-                    print(f"Mouse moved by: {delta_x}, {delta_y}")
+                    print(f"Mouse movido por: {delta_x}, {delta_y}")
                     
-                    # Small delay for aim to settle
+                    # Pequeno atraso para mira se acomodar
                     time.sleep(self.aim_delay)
                 except Exception as e:
-                    print(f"Mouse movement error: {e}")
+                    print(f"Erro de movimento do mouse: {e}")
             
             # Decide whether to shoot
             should_shoot = self.should_fire(best_target, frame_width, frame_height)
             if should_shoot and self.auto_shoot:
-                print("FIRING!")
+                print("ATIRANDO!")
                 try:
-                    # Shoot at target
+                    # Atirar no alvo
                     self.mouse_click()
-                    print("Shot fired")
+                    print("Tiro disparado")
                     
                     # Apply recoil control after shooting
                     if self.recoil_control_active:
                         self.apply_recoil_control()
                 except Exception as e:
-                    print(f"Mouse click error: {e}")
+                    print(f"Erro de clique do mouse: {e}")
         
         # If requested, return annotated frame for visualization
         if return_annotated and targets:
@@ -571,22 +571,22 @@ class CS2Aimbot:
             
         return None
 
-# Example usage if run as standalone
+# Exemplo de uso se executado como standalone
 if __name__ == "__main__":
-    print("CS2 Aimbot v2.0 - DirectInput Edition")
+    print("CS2 Aimbot v2.0 - Edição DirectInput")
     print("======================================")
-    print("F1: Toggle Aimbot (Start/Stop)")
-    print("F2: Toggle Auto-Shooting")
-    print("F3: Increase Sensitivity")
-    print("F4: Decrease Sensitivity")
-    print("F5: Toggle Debug Visualization")
-    print("F6: Toggle DirectInput Mode (Direct to Game)")
-    print("Ctrl+C: Exit Program")
+    print("F1: Alternar Aimbot (Iniciar/Parar)")
+    print("F2: Alternar Disparo Automático")
+    print("F3: Aumentar Sensibilidade")
+    print("F4: Diminuir Sensibilidade")
+    print("F5: Alternar Visualização de Debug")
+    print("F6: Alternar Modo DirectInput (Direto para Jogo)")
+    print("Ctrl+C: Sair do Programa")
     print("======================================")
     
     # Initialize aimbot
     aimbot = CS2Aimbot(model_path=r"runs\detect\cs2_model2\weights\best.pt")
-    # Düşük güven eşiği ile daha fazla obje algılayalım
+    # Detectar mais objetos com limite de confiança baixo
     aimbot.confidence_threshold = 0.25
     
     # Screen capture setup
@@ -602,74 +602,74 @@ if __name__ == "__main__":
     running = True
     aimbot_enabled = True
     debug_mode = True
-    directinput_mode = True  # Doğrudan oyuna girdi gönderme modu
+    directinput_mode = True  # Modo de envio de entrada direta para o jogo
     
     # Main loop
     try:
-        print("Aimbot running... Press Ctrl+C to stop")
-        print("Waiting for CS2 window...")
+        print("Aimbot executando... Pressione Ctrl+C para parar")
+        print("Aguardando janela do CS2...")
         
         while running:
-            # CS2 penceresini kontrol et
+            # Verificar janela do CS2
             cs2_hwnd = InputEmulator.get_cs2_window()
             if cs2_hwnd == 0:
-                print("CS2 penceresi bulunamadı! CS2'yi başlatın ve tekrar deneyin.")
+                print("Janela do CS2 não encontrada! Inicie o CS2 e tente novamente.")
                 time.sleep(3)
                 continue
             else:
-                print(f"CS2 penceresi bulundu (HWND: {cs2_hwnd})")
+                print(f"Janela do CS2 encontrada (HWND: {cs2_hwnd})")
             
             # Check keyboard controls
             if keyboard.is_pressed('f1'):
                 aimbot_enabled = not aimbot_enabled
-                print(f"Aimbot {'enabled' if aimbot_enabled else 'disabled'}")
-                time.sleep(0.3)  # Prevent multiple toggles
+                print(f"Aimbot {'habilitado' if aimbot_enabled else 'desabilitado'}")
+                time.sleep(0.3)  # Prevenir múltiplas alternâncias
                 
             if keyboard.is_pressed('f2'):
                 aimbot.auto_shoot = not aimbot.auto_shoot
-                print(f"Auto-shooting {'enabled' if aimbot.auto_shoot else 'disabled'}")
+                print(f"Disparo automático {'habilitado' if aimbot.auto_shoot else 'desabilitado'}")
                 time.sleep(0.3)
                 
             if keyboard.is_pressed('f3'):
                 aimbot.aim_speed += 0.1
-                print(f"Sensitivity increased to {aimbot.aim_speed:.1f}")
+                print(f"Sensibilidade aumentada para {aimbot.aim_speed:.1f}")
                 time.sleep(0.2)
                 
             if keyboard.is_pressed('f4'):
                 aimbot.aim_speed = max(0.1, aimbot.aim_speed - 0.1)
-                print(f"Sensitivity decreased to {aimbot.aim_speed:.1f}")
+                print(f"Sensibilidade diminuída para {aimbot.aim_speed:.1f}")
                 time.sleep(0.2)
                 
             if keyboard.is_pressed('f5'):
                 debug_mode = not debug_mode
-                print(f"Debug visualization {'enabled' if debug_mode else 'disabled'}")
+                print(f"Visualização de debug {'habilitada' if debug_mode else 'desabilitada'}")
                 time.sleep(0.3)
             
             if keyboard.is_pressed('f6'):
                 directinput_mode = not directinput_mode
-                print(f"DirectInput mode {'enabled' if directinput_mode else 'disabled'}")
+                print(f"Modo DirectInput {'habilitado' if directinput_mode else 'desabilitado'}")
                 time.sleep(0.3)
             
-            # Capture screen
+            # Capturar tela
             frame = np.array(sct.grab(monitor))
             
-            # Process frame if aimbot is enabled
+            # Processar frame se aimbot estiver habilitado
             if aimbot_enabled:
                 result = aimbot.aim_at_target(frame, return_annotated=debug_mode)
                 
-                # Show result for debugging
+                # Mostrar resultado para debug
                 if debug_mode and result is not None:
                     cv2.imshow("CS2 Aimbot Debug", result)
             
-            # Check for exit key
+            # Verificar tecla de saída
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
                 
-            # Limit processing rate
+            # Limitar taxa de processamento
             time.sleep(0.01)
     
     except KeyboardInterrupt:
-        print("Aimbot stopped by user")
+        print("Aimbot parado pelo usuário")
     
     finally:
         cv2.destroyAllWindows() 

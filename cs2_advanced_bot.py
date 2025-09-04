@@ -15,15 +15,15 @@ from datetime import datetime
 
 class CS2AdvancedBot:
     def __init__(self, config_file="bot_config.json"):
-        # Load configuration from file if it exists
+        # Carregar configuração do arquivo se existir
         self.config_file = config_file
         self.load_config()
         
-        # Screen properties
+        # Propriedades da tela
         self.screen_width, self.screen_height = pyautogui.size()
         self.center_x, self.center_y = self.screen_width // 2, self.screen_height // 2
         
-        # Runtime variables
+        # Variáveis de execução
         self.running = False
         self.paused = False
         self.scanning = False
@@ -35,33 +35,33 @@ class CS2AdvancedBot:
         self.recoil_stage = 0
         self.last_shot_time = 0
         
-        # Statistics
+        # Estatísticas
         self.kills = 0
         self.shots = 0
         self.hits = 0
         self.start_time = None
         self.session_xp = 0
         
-        # Initialize YOLOv8 model
+        # Inicializar modelo YOLOv8
         self.load_model()
         
-        # Screen capture setup
+        # Configuração de captura de tela
         self.sct = mss.mss()
         self.update_monitor_region()
         
-        # Performance monitoring
+        # Monitoramento de desempenho
         self.fps = 0
         self.last_time = time.time()
         self.frame_count = 0
         
-        # Create log directory
+        # Criar diretório de logs
         os.makedirs("logs", exist_ok=True)
         self.log_file = f"logs/cs2bot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         
-        self.log("CS2 Advanced Bot initialized")
+        self.log("CS2 Bot Avançado inicializado")
         
     def load_config(self):
-        """Load configuration from file or use defaults"""
+        """Carregar configuração do arquivo ou usar padrões"""
         default_config = {
             "model_path": r"runs\detect\cs2_model2\weights\best.pt",
             "confidence_threshold": 0.4,
@@ -85,29 +85,29 @@ class CS2AdvancedBot:
             }
         }
         
-        # Try to load from file
+        # Tentar carregar do arquivo
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:
                     loaded_config = json.load(f)
                     
-                # Update default config with loaded values
+                # Atualizar config padrão com valores carregados
                 for key, value in loaded_config.items():
                     default_config[key] = value
                     
-                self.log(f"Configuration loaded from {self.config_file}")
+                self.log(f"Configuração carregada de {self.config_file}")
         except Exception as e:
-            self.log(f"Error loading config: {e}. Using defaults.")
+            self.log(f"Erro ao carregar config: {e}. Usando padrões.")
         
-        # Set configuration attributes
+        # Definir atributos de configuração
         for key, value in default_config.items():
             setattr(self, key, value)
         
-        # Save config back to file
+        # Salvar config de volta ao arquivo
         self.save_config()
         
     def save_config(self):
-        """Save current configuration to file"""
+        """Salvar configuração atual no arquivo"""
         config = {
             "model_path": self.model_path,
             "confidence_threshold": self.confidence_threshold,
@@ -131,10 +131,10 @@ class CS2AdvancedBot:
             with open(self.config_file, 'w') as f:
                 json.dump(config, f, indent=4)
         except Exception as e:
-            self.log(f"Error saving config: {e}")
+            self.log(f"Erro ao salvar config: {e}")
     
     def update_monitor_region(self):
-        """Update the screen region to capture based on FOV settings"""
+        """Atualizar a região da tela para capturar baseado nas configurações de FOV"""
         self.monitor = {
             "top": int(self.center_y - self.screen_height * self.fov_y / 200),
             "left": int(self.center_x - self.screen_width * self.fov_x / 200),
@@ -143,16 +143,16 @@ class CS2AdvancedBot:
         }
     
     def load_model(self):
-        """Load the YOLOv8 model for player detection"""
+        """Carregar o modelo YOLOv8 para detecção de jogadores"""
         try:
             self.model = YOLO(self.model_path)
-            self.log(f"Model loaded from {self.model_path}")
+            self.log(f"Modelo carregado de {self.model_path}")
         except Exception as e:
-            self.log(f"Error loading model: {e}")
+            self.log(f"Erro ao carregar modelo: {e}")
             self.model = None
     
     def log(self, message):
-        """Log a message to console and log file"""
+        """Registrar uma mensagem no console e arquivo de log"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         log_entry = f"[{timestamp}] {message}"
         print(log_entry)
@@ -164,96 +164,96 @@ class CS2AdvancedBot:
             pass
     
     def mouse_move(self, dx, dy, smooth=True):
-        """Move mouse with optional smoothing for more natural movement"""
+        """Mover mouse com suavização opcional para movimento mais natural"""
         if smooth and self.aim_smoothness > 1.0:
-            # Divide movement into smaller steps
+            # Dividir movimento em passos menores
             steps = int(self.aim_smoothness)
             step_x = dx / steps
             step_y = dy / steps
             
             for _ in range(steps):
-                # Scale by aim speed
+                # Escalar por velocidade de mira
                 move_x = int(step_x * self.aim_speed)
                 move_y = int(step_y * self.aim_speed)
                 
                 if move_x != 0 or move_y != 0:
                     win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, move_x, move_y, 0, 0)
-                    time.sleep(0.001)  # Small delay between movements
+                    time.sleep(0.001)  # Pequeno atraso entre movimentos
         else:
-            # Single movement scaled by aim speed
+            # Movimento único escalado por velocidade de mira
             move_x = int(dx * self.aim_speed)
             move_y = int(dy * self.aim_speed)
             win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, move_x, move_y, 0, 0)
     
     def mouse_click(self):
-        """Click the left mouse button to shoot"""
+        """Clicar no botão esquerdo do mouse para atirar"""
         now = time.time()
         self.shots += 1
         self.shots_fired += 1
         self.last_shot_time = now
         
-        # Apply left mouse down/up events
+        # Aplicar eventos de botão esquerdo pressionado/solto
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         time.sleep(0.05)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         
-        # Apply recoil control if enabled
+        # Aplicar controle de recuo se habilitado
         if self.recoil_control:
             self.apply_recoil_control()
     
     def apply_recoil_control(self):
-        """Apply recoil compensation based on weapon type and shots fired"""
-        # This is a simplified recoil pattern for CS2 rifles (like AK-47)
-        # Adjust this for different weapons or based on game testing
+        """Aplicar compensação de recuo baseada no tipo de arma e tiros disparados"""
+        # Este é um padrão de recuo simplificado para rifles do CS2 (como AK-47)
+        # Ajuste isto para diferentes armas ou baseado em testes do jogo
         
         if self.shots_fired <= 3:
-            # First few shots - slight upward recoil
+            # Primeiros tiros - leve recuo para cima
             self.mouse_move(0, -3, smooth=False)
         elif self.shots_fired <= 10:
-            # Middle shots - stronger upward + side recoil
+            # Tiros do meio - recuo mais forte para cima + lateral
             self.mouse_move(
-                -2 if self.shots_fired % 2 == 0 else 2,  # Alternating left-right
-                -4,  # Upward compensation
+                -2 if self.shots_fired % 2 == 0 else 2,  # Alternando esquerda-direita
+                -4,  # Compensação para cima
                 smooth=False
             )
         else:
-            # Later shots - complex pattern
-            # Simplified based on common rifle spray patterns
+            # Tiros posteriores - padrão complexo
+            # Simplificado baseado em padrões comuns de spray de rifle
             angle = math.sin(self.shots_fired * 0.5) * 3
             self.mouse_move(int(angle), -5, smooth=False)
     
     def reload(self):
-        """Simulate pressing R key to reload"""
-        self.log("Reloading weapon")
+        """Simular pressionamento da tecla R para recarregar"""
+        self.log("Recarregando arma")
         win32api.keybd_event(0x52, 0, 0, 0)  # R key down
         time.sleep(0.05)
         win32api.keybd_event(0x52, 0, win32con.KEYEVENTF_KEYUP, 0)  # R key up
         
-        # Reset shots counter
+        # Resetar contador de tiros
         self.shots_fired = 0
-        time.sleep(0.1)  # Small delay after reload command
+        time.sleep(0.1)  # Pequeno atraso após comando de recarregar
     
     def scan_for_enemies(self):
-        """Rotate the camera to scan for enemies"""
+        """Rotacionar a câmera para procurar inimigos"""
         if not self.scanning:
             return
             
-        # Calculate rotation amount based on speed and time
+        # Calcular quantidade de rotação baseada em velocidade e tempo
         rotation_amount = self.rotation_speed * 5
         
-        # Apply rotation based on direction
+        # Aplicar rotação baseada na direção
         self.mouse_move(rotation_amount * self.scan_direction, 0, smooth=False)
         
-        # Update scan angle
+        # Atualizar ângulo de varredura
         self.scan_angle += rotation_amount * self.scan_direction
         
-        # Change direction if we've rotated too far
+        # Mudar direção se rotacionamos demais
         if abs(self.scan_angle) > 170:
             self.scan_direction *= -1
             self.scan_angle = 170 * self.scan_direction
     
     def select_best_target(self, boxes, classes, confs):
-        """Select the best target based on priority criteria"""
+        """Selecionar o melhor alvo baseado em critérios de prioridade"""
         if len(boxes) == 0:
             return None
             
@@ -264,20 +264,20 @@ class CS2AdvancedBot:
             conf = confs[i]
             cls = int(classes[i])
             
-            # Calculate center of bounding box
+            # Calcular centro da caixa delimitadora
             center_x = (x1 + x2) / 2
             center_y = (y1 + y2) / 2
             
-            # Calculate distance from screen center
+            # Calcular distância do centro da tela
             dx = center_x - self.monitor["width"] / 2
             dy = center_y - self.monitor["height"] / 2
             distance = math.sqrt(dx*dx + dy*dy)
             
-            # Calculate box size (larger targets are closer)
+            # Calcular tamanho da caixa (alvos maiores estão mais próximos)
             size = (x2 - x1) * (y2 - y1)
             
-            # Calculate target priority score (lower is better)
-            # Factors: distance to crosshair, confidence, size
+            # Calcular pontuação de prioridade do alvo (menor é melhor)
+            # Fatores: distância da mira, confiança, tamanho
             priority = distance * 0.5 - size * 0.0001 - conf * 10
             
             targets.append({
@@ -292,90 +292,90 @@ class CS2AdvancedBot:
                 "priority": priority
             })
         
-        # Sort targets by priority (lower is better)
+        # Ordenar alvos por prioridade (menor é melhor)
         targets.sort(key=lambda t: t["priority"])
         
-        # Return the best target
+        # Retornar o melhor alvo
         return targets[0]
     
     def detect_and_aim(self):
-        """Capture screen, detect players, and aim at the best target"""
-        # Capture screen
+        """Capturar tela, detectar jogadores e mirar no melhor alvo"""
+        # Capturar tela
         img = np.array(self.sct.grab(self.monitor))
         
-        # Convert to RGB for YOLOv8
+        # Converter para RGB para YOLOv8
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
         
-        # Run YOLOv8 inference
+        # Executar inferência YOLOv8
         if self.model is not None:
             results = self.model(img_rgb, conf=self.confidence_threshold)[0]
             
             if len(results.boxes) > 0:
-                # Get detection data
+                # Obter dados de detecção
                 boxes = results.boxes.xyxy
                 classes = results.boxes.cls
                 confs = results.boxes.conf
                 
-                # Select best target
+                # Selecionar melhor alvo
                 target = self.select_best_target(boxes, classes, confs)
                 
                 if target:
-                    # Stop scanning when target found
+                    # Parar varredura quando alvo encontrado
                     self.scanning = False
                     
-                    # Calculate aim target (with headshot offset)
+                    # Calcular alvo de mira (com deslocamento de headshot)
                     target_x = target["dx"]
                     target_y = target["dy"] + self.headshot_offset
                     
-                    # Aim at target if it's far enough from center
+                    # Mirar no alvo se está longe o suficiente do centro
                     if abs(target_x) > 3 or abs(target_y) > 3:
                         self.mouse_move(int(target_x), int(target_y))
                     
-                    # Once aim is on target
+                    # Uma vez que a mira está no alvo
                     if abs(target_x) < 10 and abs(target_y) < 10:
-                        # Check if we should shoot
+                        # Verificar se devemos atirar
                         now = time.time()
                         should_shoot = True
                         
-                        # Apply burst fire logic if enabled
+                        # Aplicar lógica de rajada se habilitada
                         if self.burst_fire:
                             if self.shots_fired >= self.burst_size:
-                                # Wait for burst delay before firing again
+                                # Aguardar atraso da rajada antes de atirar novamente
                                 if now - self.last_shot_time < self.burst_delay:
                                     should_shoot = False
                                 else:
-                                    # Reset burst counter after delay
+                                    # Resetar contador de rajada após atraso
                                     self.shots_fired = 0
                         
-                        # Shoot if conditions are met
+                        # Atirar se condições forem atendidas
                         if should_shoot:
                             self.mouse_click()
-                            self.hits += 1  # Assuming a hit when aimed correctly
+                            self.hits += 1  # Assumindo acerto quando mirado corretamente
                             
-                            # Check if we need to reload
+                            # Verificar se precisamos recarregar
                             if self.auto_reload and self.shots_fired > self.reload_ammo_threshold:
                                 self.reload()
                 else:
-                    # Reset if no valid target
+                    # Resetar se não há alvo válido
                     self.scanning = True
                     self.shots_fired = 0
             else:
-                # No detections, scan for enemies
+                # Nenhuma detecção, procurar inimigos
                 self.scanning = True
                 self.shots_fired = 0
         
-        # Update performance stats
+        # Atualizar estatísticas de desempenho
         self.frame_count += 1
         current_time = time.time()
         if current_time - self.last_time >= 1:
             self.fps = self.frame_count
             self.frame_count = 0
             self.last_time = current_time
-            self.log(f"FPS: {self.fps}, Shots: {self.shots}, Hits: {self.hits}")
+            self.log(f"FPS: {self.fps}, Tiros: {self.shots}, Acertos: {self.hits}")
     
     def start(self):
-        """Start the bot"""
-        self.log(f"Starting CS2 Advanced Bot - Press '{self.hotkeys['stop']}' to stop, '{self.hotkeys['pause']}' to pause/resume")
+        """Iniciar o bot"""
+        self.log(f"Iniciando CS2 Bot Avançado - Pressione '{self.hotkeys['stop']}' para parar, '{self.hotkeys['pause']}' para pausar/continuar")
         
         self.running = True
         self.scanning = True
@@ -383,43 +383,43 @@ class CS2AdvancedBot:
         
         while self.running:
             try:
-                # Check for stop key
+                # Verificar tecla de parada
                 if keyboard.is_pressed(self.hotkeys['stop']):
                     self.running = False
-                    self.log("Bot stopped by user")
+                    self.log("Bot parado pelo usuário")
                     break
                 
-                # Check for pause key
+                # Verificar tecla de pausa
                 if keyboard.is_pressed(self.hotkeys['pause']):
                     self.paused = not self.paused
-                    self.log(f"Bot {'paused' if self.paused else 'resumed'} by user")
-                    time.sleep(0.5)  # Prevent multiple toggles
+                    self.log(f"Bot {'pausado' if self.paused else 'continuando'} pelo usuário")
+                    time.sleep(0.5)  # Prevenir múltiplos acionamentos
                 
-                # Skip processing if paused
+                # Pular processamento se pausado
                 if self.paused:
                     time.sleep(0.1)
                     continue
                 
-                # Main bot logic
+                # Lógica principal do bot
                 self.detect_and_aim()
                 
-                # If not targeting, scan for enemies
+                # Se não está mirando, procurar inimigos
                 if self.scanning:
                     self.scan_for_enemies()
                 
-                # Small sleep to control CPU usage
+                # Pequeno atraso para controlar uso de CPU
                 time.sleep(0.01)
                 
             except Exception as e:
-                self.log(f"Error in main loop: {e}")
+                self.log(f"Erro no loop principal: {e}")
                 time.sleep(0.1)
         
-        # Clean up and save stats
+        # Limpar e salvar estatísticas
         self.save_session_stats()
         cv2.destroyAllWindows()
     
     def save_session_stats(self):
-        """Save session statistics to file"""
+        """Salvar estatísticas da sessão no arquivo"""
         if self.start_time:
             session_duration = time.time() - self.start_time
             
@@ -439,25 +439,25 @@ class CS2AdvancedBot:
                 stats_file = f"logs/stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                 with open(stats_file, 'w') as f:
                     json.dump(stats, f, indent=4)
-                self.log(f"Session stats saved to {stats_file}")
+                self.log(f"Estatísticas da sessão salvas em {stats_file}")
                 
-                # Log summary
-                self.log(f"Session summary: Duration: {stats['duration_formatted']}, Shots: {stats['shots']}, Hits: {stats['hits']}, Accuracy: {stats['accuracy']}%")
+                # Log resumo
+                self.log(f"Resumo da sessão: Duração: {stats['duration_formatted']}, Tiros: {stats['shots']}, Acertos: {stats['hits']}, Precisão: {stats['accuracy']}%")
             except Exception as e:
-                self.log(f"Error saving stats: {e}")
+                self.log(f"Erro ao salvar estatísticas: {e}")
     
     def run_in_thread(self):
-        """Run the bot in a separate thread"""
+        """Executar o bot em uma thread separada"""
         thread = threading.Thread(target=self.start)
         thread.daemon = True
         thread.start()
         return thread
 
 if __name__ == "__main__":
-    # Allow time to switch to the game window
-    print("Switch to CS2 game window in 5 seconds...")
+    # Dar tempo para mudar para a janela do jogo
+    print("Mude para a janela do CS2 em 5 segundos...")
     time.sleep(5)
     
-    # Create and start the bot
+    # Criar e iniciar o bot
     bot = CS2AdvancedBot()
     bot.start() 

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h2>Gerenciamento de VMs</h2>
+    <a href="/managers/create" class="btn btn-success">+ Nova VM</a>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Máquinas Virtuais</h5>
+            </div>
+            <div class="card-body">
+                {% if vms %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>IP</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vm_id, vm in vms.items() %}
+                            <tr>
+                                <td>{{ vm.name }}</td>
+                                <td>{{ vm.ip }}</td>
+                                <td>{{ vm.type }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ vm.status }}</span>
+                                </td>
+                                <td>
+                                    <form method="POST" style="display: inline;">
+                                        <button formaction="/managers/start/{{ vm_id }}" class="btn btn-sm btn-success">Iniciar</button>
+                                        <button formaction="/managers/stop/{{ vm_id }}" class="btn btn-sm btn-warning">Parar</button>
+                                        <button formaction="/managers/delete/{{ vm_id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?')">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center">
+                    <p>Nenhuma VM configurada.</p>
+                    <a href="/managers/create" class="btn btn-success">Criar primeira VM</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Criar Novo Trabalho de Gerenciamento</h2>
+        
+        <form method="POST">
+            <div class="mb-3">
+                <label for="vm_id" class="form-label">Selecionar VM</label>
+                <select class="form-control" id="vm_id" name="vm_id" required>
+                    <option value="">Escolha uma VM...</option>
+                    {% for vm_id, vm in vms.items() %}
+                    <option value="{{ vm_id }}">{{ vm.name }} ({{ vm.ip }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="job_type" class="form-label">Tipo de Operação</label>
+                <select class="form-control" id="job_type" name="job_type" required>
+                    <option value="start">Iniciar VM</option>
+                    <option value="stop">Parar VM</option>
+                    <option value="restart">Reiniciar VM</option>
+                    <option value="snapshot">Criar Snapshot</option>
+                    <option value="backup">Fazer Backup</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="scheduled_time" class="form-label">Agendar Para (Opcional)</label>
+                <input type="datetime-local" class="form-control" id="scheduled_time" name="scheduled_time">
+                <small class="form-text text-muted">Deixe em branco para executar imediatamente</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Descrição</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <button type="submit" class="btn btn-success">Criar Trabalho</button>
+                <a href="/manager-jobs" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

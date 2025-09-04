@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Criar Nova VM</h2>
+        
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Nome da VM</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="ip" class="form-label">Endereço IP</label>
+                <input type="text" class="form-control" id="ip" name="ip" placeholder="192.168.1.100" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="type" class="form-label">Tipo da VM</label>
+                <select class="form-control" id="type" name="type">
+                    <option value="hyperv">Hyper-V</option>
+                    <option value="vmware">VMware</option>
+                    <option value="virtualbox">VirtualBox</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <button type="submit" class="btn btn-success">Criar VM</button>
+                <a href="/managers" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

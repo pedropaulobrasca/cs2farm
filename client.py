@@ -22,24 +22,24 @@ import numpy as np
 import cv2
 from pathlib import Path
 
-# Botları doğru şekilde import edebilmek için modül yolunu ayarlıyoruz
+# Ajustando o caminho do módulo para importar os bots corretamente
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
     from cs2_aimbot import CS2Aimbot
     from cs2_advanced_bot import CS2AdvancedBot
 except ImportError:
-    print("UYARI: Bot modülleri bulunamadı, gerekirse indirilecek.")
+    print("AVISO: Módulos do bot não encontrados, serão baixados se necessário.")
 
-# Temel yapılandırma
+# Configuração básica
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'client_config.json')
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 SCREENSHOTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'screenshots')
 
-# Dizinleri oluştur
+# Criar diretórios
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
-# Log yapılandırması
+# Configuração de log
 log_file = os.path.join(LOG_DIR, f'client_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 logging.basicConfig(
     level=logging.INFO,
@@ -68,48 +68,48 @@ class CS2Client:
         self.last_heartbeat = 0
         self.heartbeat_interval = 30  # saniye
         
-        # Bot durumu
+        # Status do bot
         self.bot_status = 'inactive'
         self.current_xp = 0
         self.current_level = 0
         self.session_start_time = None
         
-        logger.info(f"CS2 Client başlatıldı - Machine: {self.machine_name}, VM ID: {self.vm_id}")
+        logger.info(f"CS2 Client iniciado - Máquina: {self.machine_name}, VM ID: {self.vm_id}")
     
     def load_config(self):
-        """Yapılandırma dosyasını yükle veya oluştur"""
+        """Carregar ou criar arquivo de configuração"""
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, 'r') as f:
                     config = json.load(f)
                     
-                # VM ID'yi güncelleştir
+                # Atualizar VM ID
                 if self.vm_id and 'vm_id' in config:
                     config['vm_id'] = self.vm_id
                     
                 return config
             except Exception as e:
-                logger.error(f"Yapılandırma dosyası yüklenirken hata oluştu: {e}")
+                logger.error(f"Erro ao carregar arquivo de configuração: {e}")
         
-        # Varsayılan yapılandırma
+        # Configuração padrão
         default_config = {
             'vm_id': self.vm_id,
             'server_url': self.server_url,
             'api_key': self.api_key,
             'steam_path': r'C:\Program Files (x86)\Steam\steam.exe',
             'cs2_app_id': 730,
-            'bot_type': 'advanced',  # 'aimbot' veya 'advanced'
-            'screenshot_interval': 300,  # saniye
-            'max_session_time': 10800,  # 3 saat
+            'bot_type': 'advanced',  # 'aimbot' ou 'advanced'
+            'screenshot_interval': 300,  # segundos
+            'max_session_time': 10800,  # 3 horas
             'auto_restart': True
         }
         
-        # Yapılandırmayı kaydet
+        # Salvar configuração
         self.save_config(default_config)
         return default_config
     
     def save_config(self, config=None):
-        """Yapılandırmayı dosyaya kaydet"""
+        """Salvar configuração no arquivo"""
         if config is None:
             config = self.config
             
@@ -118,14 +118,14 @@ class CS2Client:
                 json.dump(config, f, indent=4)
             return True
         except Exception as e:
-            logger.error(f"Yapılandırma kaydedilirken hata oluştu: {e}")
+            logger.error(f"Erro ao salvar configuração: {e}")
             return False
     
     def send_heartbeat(self):
-        """Sunucuya durum bildirimi gönder"""
+        """Enviar notificação de status para o servidor"""
         current_time = time.time()
         
-        # Heartbeat gönderme aralığını kontrol et
+        # Verificar intervalo de envio do heartbeat
         if current_time - self.last_heartbeat < self.heartbeat_interval:
             return
             
@@ -146,31 +146,31 @@ class CS2Client:
                 'current_level': self.current_level
             }
             
-            logger.debug("Heartbeat gönderiliyor...")
+            logger.debug("Enviando heartbeat...")
             response = requests.post(url, headers=headers, json=data, timeout=10)
             
             if response.status_code == 200:
                 response_data = response.json()
-                logger.debug(f"Heartbeat başarılı: {response_data}")
+                logger.debug(f"Heartbeat bem-sucedido: {response_data}")
                 
-                # Yeni iş var mı kontrol et
+                # Verificar se há novos trabalhos
                 if response_data.get('has_jobs', False) and not self.active_job:
                     pending_jobs = response_data.get('pending_jobs', [])
                     if pending_jobs:
-                        # İlk bekleyen işi al
+                        # Pegar o primeiro trabalho pendente
                         self.active_job = pending_jobs[0]
-                        logger.info(f"Yeni iş alındı: {self.active_job['id']} - Tip: {self.active_job['type']}")
+                        logger.info(f"Novo trabalho recebido: {self.active_job['id']} - Tipo: {self.active_job['type']}")
                         
-                        # İşi başlat
+                        # Iniciar trabalho
                         self.start_job(self.active_job)
             else:
-                logger.error(f"Heartbeat hatası: {response.status_code} - {response.text}")
+                logger.error(f"Erro no heartbeat: {response.status_code} - {response.text}")
         
         except Exception as e:
-            logger.error(f"Heartbeat gönderilirken hata oluştu: {e}")
+            logger.error(f"Erro ao enviar heartbeat: {e}")
     
     def get_bot_config(self):
-        """Sunucudan bot yapılandırmasını al"""
+        """Obter configuração do bot do servidor"""
         try:
             url = f"{self.server_url}/api/v1/bot/config/{self.vm_id}"
             headers = {'Content-Type': 'application/json', 'X-API-Key': self.api_key}
@@ -179,18 +179,18 @@ class CS2Client:
             
             if response.status_code == 200:
                 config = response.json()
-                logger.info("Bot yapılandırması alındı")
+                logger.info("Configuração do bot obtida")
                 return config
             else:
-                logger.error(f"Bot yapılandırması alınamadı: {response.status_code} - {response.text}")
+                logger.error(f"Não foi possível obter configuração do bot: {response.status_code} - {response.text}")
                 return None
         
         except Exception as e:
-            logger.error(f"Bot yapılandırması alınırken hata oluştu: {e}")
+            logger.error(f"Erro ao obter configuração do bot: {e}")
             return None
     
     def update_job_status(self, job_id, updates):
-        """İş durumunu sunucuda güncelle"""
+        """Atualizar status do trabalho no servidor"""
         try:
             url = f"{self.server_url}/api/v1/job/update"
             headers = {'Content-Type': 'application/json', 'X-API-Key': self.api_key}
@@ -203,18 +203,18 @@ class CS2Client:
             response = requests.post(url, headers=headers, json=data, timeout=10)
             
             if response.status_code == 200:
-                logger.info(f"İş durumu güncellendi: {job_id}")
+                logger.info(f"Status do trabalho atualizado: {job_id}")
                 return True
             else:
-                logger.error(f"İş durumu güncellenemedi: {response.status_code} - {response.text}")
+                logger.error(f"Não foi possível atualizar status do trabalho: {response.status_code} - {response.text}")
                 return False
         
         except Exception as e:
-            logger.error(f"İş durumu güncellenirken hata oluştu: {e}")
+            logger.error(f"Erro ao atualizar status do trabalho: {e}")
             return False
     
     def is_steam_running(self):
-        """Steam'in çalışıp çalışmadığını kontrol et"""
+        """Verificar se o Steam está em execução"""
         try:
             for proc in psutil.process_iter(['pid', 'name']):
                 if 'steam' in proc.info['name'].lower():
@@ -224,14 +224,14 @@ class CS2Client:
             self.steam_process = None
             return False
         except Exception as e:
-            logger.error(f"Steam durumu kontrol edilirken hata oluştu: {e}")
+            logger.error(f"Erro ao verificar status do Steam: {e}")
             return False
     
     def is_cs2_running(self):
-        """CS2'nin çalışıp çalışmadığını kontrol et"""
+        """Verificar se o CS2 está em execução"""
         try:
             for proc in psutil.process_iter(['pid', 'name']):
-                # CS2 işlem adı
+                # Nome do processo CS2
                 if 'cs2' in proc.info['name'].lower() or 'counter-strike' in proc.info['name'].lower():
                     self.cs2_process = proc
                     return True
@@ -239,88 +239,88 @@ class CS2Client:
             self.cs2_process = None
             return False
         except Exception as e:
-            logger.error(f"CS2 durumu kontrol edilirken hata oluştu: {e}")
+            logger.error(f"Erro ao verificar status do CS2: {e}")
             return False
     
     def start_steam(self):
-        """Steam'i başlat"""
+        """Iniciar Steam"""
         if self.is_steam_running():
-            logger.info("Steam zaten çalışıyor")
+            logger.info("Steam já está em execução")
             return True
         
         try:
             steam_path = self.config.get('steam_path', r'C:\Program Files (x86)\Steam\steam.exe')
-            logger.info(f"Steam başlatılıyor: {steam_path}")
+            logger.info(f"Iniciando Steam: {steam_path}")
             
-            # Steam'i başlat
+            # Iniciar Steam
             subprocess.Popen([steam_path, "-silent"], creationflags=subprocess.CREATE_NEW_CONSOLE)
             
-            # Steam'in başlamasını bekle
+            # Aguardar o Steam iniciar
             max_wait = 60  # saniye
             start_time = time.time()
             
             while not self.is_steam_running():
                 if time.time() - start_time > max_wait:
-                    logger.error("Steam başlatılamadı - zaman aşımı")
+                    logger.error("Não foi possível iniciar o Steam - tempo limite excedido")
                     return False
                 
-                logger.info("Steam başlatılıyor, bekleniyor...")
+                logger.info("Iniciando Steam, aguardando...")
                 time.sleep(5)
             
-            logger.info("Steam başarıyla başlatıldı")
+            logger.info("Steam iniciado com sucesso")
             return True
         
         except Exception as e:
-            logger.error(f"Steam başlatılırken hata oluştu: {e}")
+            logger.error(f"Erro ao iniciar Steam: {e}")
             return False
     
     def start_cs2(self):
-        """CS2'yi Steam üzerinden başlat"""
+        """Iniciar CS2 via Steam"""
         if self.is_cs2_running():
-            logger.info("CS2 zaten çalışıyor")
+            logger.info("CS2 já está em execução")
             return True
         
         if not self.is_steam_running():
             if not self.start_steam():
-                logger.error("CS2 başlatılamadı - Steam çalışmıyor")
+                logger.error("Não foi possível iniciar CS2 - Steam não está em execução")
                 return False
         
         try:
-            # Steam üzerinden CS2'yi başlat
+            # Iniciar CS2 via Steam
             cs2_app_id = self.config.get('cs2_app_id', 730)
-            logger.info(f"CS2 başlatılıyor (AppID: {cs2_app_id})")
+            logger.info(f"Iniciando CS2 (AppID: {cs2_app_id})")
             
-            # Steam URL protokolü ile CS2'yi başlat
+            # Iniciar CS2 com protocolo URL do Steam
             subprocess.Popen([f"steam://run/{cs2_app_id}"], shell=True)
             
-            # CS2'nin başlamasını bekle
+            # Aguardar CS2 iniciar
             max_wait = 120  # saniye
             start_time = time.time()
             
             while not self.is_cs2_running():
                 if time.time() - start_time > max_wait:
-                    logger.error("CS2 başlatılamadı - zaman aşımı")
+                    logger.error("Não foi possível iniciar CS2 - tempo limite excedido")
                     return False
                 
-                logger.info("CS2 başlatılıyor, bekleniyor...")
+                logger.info("Iniciando CS2, aguardando...")
                 time.sleep(5)
             
-            # Oyunun tam yüklenmesi için biraz daha bekle
-            logger.info("CS2 başlatıldı, oyunun tam yüklenmesi bekleniyor...")
+            # Aguardar um pouco mais para o jogo carregar completamente
+            logger.info("CS2 iniciado, aguardando o jogo carregar completamente...")
             time.sleep(30)
             
-            # CS2 penceresini öne getir
+            # Trazer janela do CS2 para frente
             self.focus_cs2_window()
             
-            logger.info("CS2 başarıyla başlatıldı")
+            logger.info("CS2 iniciado com sucesso")
             return True
         
         except Exception as e:
-            logger.error(f"CS2 başlatılırken hata oluştu: {e}")
+            logger.error(f"Erro ao iniciar CS2: {e}")
             return False
     
     def focus_cs2_window(self):
-        """CS2 penceresini öne getir"""
+        """Trazer janela do CS2 para frente"""
         try:
             def callback(hwnd, extra):
                 if win32gui.IsWindowVisible(hwnd):
@@ -332,35 +332,35 @@ class CS2Client:
             
             win32gui.EnumWindows(callback, None)
         except Exception as e:
-            logger.error(f"CS2 penceresi odaklanırken hata oluştu: {e}")
+            logger.error(f"Erro ao focar janela do CS2: {e}")
     
     def take_screenshot(self):
-        """Ekran görüntüsü al ve kaydet"""
+        """Capturar e salvar captura de tela"""
         try:
-            # Ekran görüntüsü al
+            # Capturar screenshot
             monitor = {'top': 0, 'left': 0, 'width': 1920, 'height': 1080}
             screenshot = np.array(self.sct.grab(monitor))
             
-            # Dosya adı oluştur
+            # Criar nome do arquivo
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = os.path.join(SCREENSHOTS_DIR, f"cs2_{timestamp}.jpg")
             
-            # Kaydet
+            # Salvar
             cv2.imwrite(filename, screenshot)
-            logger.info(f"Ekran görüntüsü kaydedildi: {filename}")
+            logger.info(f"Captura de tela salva: {filename}")
             
             return filename
         except Exception as e:
-            logger.error(f"Ekran görüntüsü alınırken hata oluştu: {e}")
+            logger.error(f"Erro ao capturar tela: {e}")
             return None
     
     def init_bot(self, bot_config=None):
-        """Bot örneğini başlat"""
+        """Iniciar instância do bot"""
         if bot_config is None:
             bot_config = self.get_bot_config()
             
         if bot_config is None:
-            logger.error("Bot yapılandırması alınamadı, varsayılan değerler kullanılacak")
+            logger.error("Não foi possível obter configuração do bot, valores padrão serão usados")
             bot_config = {
                 "model_path": r"runs\detect\cs2_model2\weights\best.pt",
                 "confidence_threshold": 0.4,
@@ -373,124 +373,124 @@ class CS2Client:
             }
         
         try:
-            # Bot tipine göre örnek oluştur
+            # Criar instância conforme tipo do bot
             bot_type = self.config.get('bot_type', 'advanced')
             
             if bot_type == 'aimbot':
-                logger.info("CS2Aimbot başlatılıyor...")
+                logger.info("Iniciando CS2Aimbot...")
                 self.bot_instance = CS2Aimbot(model_path=bot_config.get('model_path'))
                 
-                # Parametreleri güncelle
+                # Atualizar parâmetros
                 for key, value in bot_config.items():
                     if hasattr(self.bot_instance, key):
                         setattr(self.bot_instance, key, value)
             else:
-                # Advanced Bot
-                logger.info("CS2AdvancedBot başlatılıyor...")
+                # Bot Avançado
+                logger.info("Iniciando CS2AdvancedBot...")
                 self.bot_instance = CS2AdvancedBot(config_file=None)
                 
-                # Parametreleri doğrudan ayarla
+                # Definir parâmetros diretamente
                 for key, value in bot_config.items():
                     if hasattr(self.bot_instance, key):
                         setattr(self.bot_instance, key, value)
             
-            logger.info("Bot başarıyla başlatıldı")
+            logger.info("Bot iniciado com sucesso")
             return True
         
         except Exception as e:
-            logger.error(f"Bot başlatılırken hata oluştu: {e}")
+            logger.error(f"Erro ao iniciar bot: {e}")
             return False
     
     def run_bot(self):
-        """Bot'u çalıştır"""
+        """Executar o bot"""
         if self.bot_instance is None:
             if not self.init_bot():
                 return False
         
-        # CS2 çalışıyor mu kontrol et
+        # Verificar se CS2 está em execução
         if not self.is_cs2_running():
             if not self.start_cs2():
                 return False
         
-        # CS2 penceresini öne getir
+        # Trazer janela do CS2 para frente
         self.focus_cs2_window()
         
-        # Bot tipine göre çalıştır
+        # Executar conforme tipo do bot
         try:
             if isinstance(self.bot_instance, CS2Aimbot):
-                # Aimbot modunda çalıştır
-                logger.info("CS2Aimbot çalıştırılıyor...")
+                # Executar em modo Aimbot
+                logger.info("Executando CS2Aimbot...")
                 
-                # Ekran görüntüsü yakalama döngüsü
+                # Loop de captura de tela
                 while self.running and self.is_cs2_running():
                     monitor = {'top': 0, 'left': 0, 'width': 1920, 'height': 1080}
                     frame = np.array(self.sct.grab(monitor))
                     
-                    # Bot işlemleri
+                    # Operações do bot
                     self.bot_instance.aim_at_target(frame)
                     
-                    # Kısa bekleme
+                    # Pequena espera
                     time.sleep(0.01)
             
             elif isinstance(self.bot_instance, CS2AdvancedBot):
-                # Advanced bot modunda çalıştır
-                logger.info("CS2AdvancedBot çalıştırılıyor...")
+                # Executar em modo Bot Avançado
+                logger.info("Executando CS2AdvancedBot...")
                 
-                # Doğrudan start metodu ile çalıştır
+                # Executar diretamente com método start
                 self.bot_instance.running = True
                 self.bot_instance.scanning = True
                 self.bot_instance.start_time = time.time()
                 
-                # Bot döngüsü
+                # Loop do bot
                 while self.running and self.is_cs2_running():
                     try:
-                        # Durdurma tuşu kontrolü
+                        # Verificar tecla de parada
                         if win32api.GetAsyncKeyState(win32con.VK_F8) & 0x8000:
-                            logger.info("F8 tuşu ile durduruldu")
+                            logger.info("Parado com tecla F8")
                             break
                         
-                        # Duraklatma tuşu kontrolü
+                        # Verificar tecla de pausa
                         if win32api.GetAsyncKeyState(win32con.VK_F7) & 0x8000:
                             self.bot_instance.paused = not self.bot_instance.paused
-                            logger.info(f"Bot {'duraklatıldı' if self.bot_instance.paused else 'devam ediyor'}")
-                            time.sleep(0.5)  # Çoklu basış engelle
+                            logger.info(f"Bot {'pausado' if self.bot_instance.paused else 'continuando'}")
+                            time.sleep(0.5)  # Evitar múltiplos pressionamentos
                         
-                        # Bot duraklatıldıysa atla
+                        # Pular se o bot estiver pausado
                         if self.bot_instance.paused:
                             time.sleep(0.1)
                             continue
                         
-                        # Ana bot mantığı
+                        # Lógica principal do bot
                         self.bot_instance.detect_and_aim()
                         
-                        # Tarama kontrolü
+                        # Controle de varredura
                         if self.bot_instance.scanning:
                             self.bot_instance.scan_for_enemies()
                         
-                        # CPU kullanımını kontrol et
+                        # Controlar uso de CPU
                         time.sleep(0.01)
                         
                     except Exception as e:
-                        logger.error(f"Bot çalışırken hata oluştu: {e}")
+                        logger.error(f"Erro ao executar bot: {e}")
                         time.sleep(0.1)
                 
-                # İstatistikleri güncelle
+                # Atualizar estatísticas
                 self.current_xp = self.bot_instance.session_xp
-                self.current_level = 0  # Bot'tan seviyeyi al
+                self.current_level = 0  # Obter nível do bot
             
             else:
-                logger.error("Desteklenmeyen bot türü")
+                logger.error("Tipo de bot não suportado")
                 return False
             
-            logger.info("Bot çalışması tamamlandı")
+            logger.info("Execução do bot concluída")
             return True
         
         except Exception as e:
-            logger.error(f"Bot çalıştırılırken hata oluştu: {e}")
+            logger.error(f"Erro ao executar bot: {e}")
             return False
     
     def start_job(self, job):
-        """Belirli bir işi başlat"""
+        """Iniciar um trabalho específico"""
         if job['type'] == 'xp_farm':
             return self.start_xp_farm_job(job)
         elif job['type'] == 'drop_screenshot':
@@ -498,14 +498,14 @@ class CS2Client:
         elif job['type'] == 'claim_drop':
             return self.start_claim_drop_job(job)
         else:
-            logger.error(f"Desteklenmeyen iş türü: {job['type']}")
+            logger.error(f"Tipo de trabalho não suportado: {job['type']}")
             return False
     
     def start_xp_farm_job(self, job):
         """XP farm işini başlat"""
         logger.info(f"XP Farm işi başlatılıyor: {job['id']}")
         
-        # İş durumunu güncelle
+        # Atualizar status do trabalho
         self.update_job_status(job['id'], {
             'status': 'running',
             'start_time': datetime.now().isoformat()
@@ -564,7 +564,7 @@ class CS2Client:
                 self.take_screenshot()
                 self.session_start_time = time.time()
             
-            # Sunucuyla iletişim kur
+            # Comunicar com o servidor
             self.send_heartbeat()
             
             # Zaman aşımını kontrol et
@@ -581,11 +581,11 @@ class CS2Client:
             # Kısa bekleme
             time.sleep(10)
         
-        # Bot'u durdur
+        # Parar o bot
         self.running = False
         self.bot_status = 'inactive'
         
-        # İşi tamamlandı olarak işaretle
+        # Marcar trabalho como concluído
         self.update_job_status(job['id'], {
             'status': 'completed',
             'completion_time': datetime.now().isoformat(),
@@ -606,7 +606,7 @@ class CS2Client:
         """Ekran görüntüsü alma işini başlat"""
         logger.info(f"Ekran görüntüsü işi başlatılıyor: {job['id']}")
         
-        # İş durumunu güncelle
+        # Atualizar status do trabalho
         self.update_job_status(job['id'], {
             'status': 'running',
             'start_time': datetime.now().isoformat()
@@ -625,7 +625,7 @@ class CS2Client:
                 })
                 return False
         
-        # CS2 penceresini öne getir
+        # Trazer janela do CS2 para frente
         self.focus_cs2_window()
         
         # 5 saniye bekle
@@ -635,7 +635,7 @@ class CS2Client:
         screenshot_path = self.take_screenshot()
         
         if screenshot_path:
-            # İşi tamamlandı olarak işaretle
+            # Marcar trabalho como concluído
             self.update_job_status(job['id'], {
                 'status': 'completed',
                 'completion_time': datetime.now().isoformat(),
@@ -666,10 +666,10 @@ class CS2Client:
             return False
     
     def start_claim_drop_job(self, job):
-        """Drop talep etme işini başlat"""
-        logger.info(f"Drop talep işi başlatılıyor: {job['id']}")
+        """Iniciar trabalho de solicitação de drop"""
+        logger.info(f"Iniciando trabalho de solicitação de drop: {job['id']}")
         
-        # İş durumunu güncelle
+        # Atualizar status do trabalho
         self.update_job_status(job['id'], {
             'status': 'running',
             'start_time': datetime.now().isoformat()
@@ -688,29 +688,29 @@ class CS2Client:
                 })
                 return False
         
-        # CS2 penceresini öne getir
+        # Trazer janela do CS2 para frente
         self.focus_cs2_window()
         
         try:
-            # Drop menüsüne gitme işlemleri
-            # Not: Bu kısım CS2 arayüzüne göre özelleştirilmeli
+            # Operações para acessar menu de drops
+            # Nota: Esta parte deve ser personalizada conforme a interface do CS2
             
-            # Inventory menüsüne tıkla
+            # Clicar no menu do inventário
             pyautogui.click(x=600, y=50)
             time.sleep(2)
             
-            # Drops sekmesine tıkla
+            # Clicar na aba de drops
             pyautogui.click(x=800, y=150)
             time.sleep(2)
             
-            # Claim butonuna tıkla
+            # Clicar no botão de resgatar
             pyautogui.click(x=700, y=500)
             time.sleep(3)
             
-            # Ekran görüntüsü al
+            # Capturar screenshot
             screenshot_path = self.take_screenshot()
             
-            # İşi tamamlandı olarak işaretle
+            # Marcar trabalho como concluído
             self.update_job_status(job['id'], {
                 'status': 'completed',
                 'completion_time': datetime.now().isoformat(),
@@ -720,21 +720,21 @@ class CS2Client:
                 }
             })
             
-            logger.info(f"Drop talep işi tamamlandı: {job['id']}")
+            logger.info(f"Trabalho de solicitação de drop concluído: {job['id']}")
             
             # Aktif işi temizle
             self.active_job = None
             return True
             
         except Exception as e:
-            logger.error(f"Drop talep edilirken hata oluştu: {e}")
+            logger.error(f"Erro ao solicitar drop: {e}")
             
             # İşi başarısız olarak işaretle
             self.update_job_status(job['id'], {
                 'status': 'failed',
                 'completion_time': datetime.now().isoformat(),
                 'result': {
-                    'error': f'Drop talep edilirken hata: {str(e)}'
+                    'error': f'Erro ao solicitar drop: {str(e)}'
                 }
             })
             
@@ -743,57 +743,57 @@ class CS2Client:
             return False
     
     def run(self):
-        """Ana istemci döngüsünü çalıştır"""
-        logger.info("CS2 Client başlatılıyor...")
+        """Executar loop principal do cliente"""
+        logger.info("Iniciando CS2 Client...")
         
         try:
             while True:
-                # Steam ve CS2 durumlarını kontrol et
+                # Verificar status do Steam e CS2
                 self.is_steam_running()
                 self.is_cs2_running()
                 
-                # Sunucuyla iletişim kur
+                # Comunicar com o servidor
                 self.send_heartbeat()
                 
-                # Aktif iş yok ve CS2 çalışmıyorsa, boşta bekle
+                # Se não há trabalho ativo e CS2 não está em execução, aguardar
                 if not self.active_job and not self.cs2_process:
                     time.sleep(10)
                     continue
                 
-                # Aktif iş varsa ve CS2 çalışmıyorsa, CS2'yi başlat
+                # Se há trabalho ativo e CS2 não está em execução, iniciar CS2
                 if self.active_job and not self.cs2_process:
                     if not self.start_cs2():
-                        logger.error("CS2 başlatılamadı, iş bekliyor")
+                        logger.error("Não foi possível iniciar CS2, trabalho em espera")
                         time.sleep(30)
                         continue
                 
-                # 10 saniye bekle
+                # Aguardar 10 segundos
                 time.sleep(10)
         
         except KeyboardInterrupt:
-            logger.info("Kullanıcı tarafından durduruldu")
+            logger.info("Interrompido pelo usuário")
         
         except Exception as e:
-            logger.error(f"Ana döngüde hata oluştu: {e}")
+            logger.error(f"Erro no loop principal: {e}")
         
         finally:
-            logger.info("CS2 Client kapatılıyor...")
+            logger.info("Encerrando CS2 Client...")
             
-            # Aktif iş varsa, sonlandır
+            # Se há trabalho ativo, finalizar
             if self.active_job:
                 self.update_job_status(self.active_job['id'], {
                     'status': 'interrupted',
                     'completion_time': datetime.now().isoformat(),
                     'result': {
-                        'error': 'Client kapatıldı'
+                        'error': 'Cliente encerrado'
                     }
                 })
             
-            # Bot'u durdur
+            # Parar o bot
             self.running = False
             self.bot_status = 'inactive'
             
-            # mss kaynağını temizle
+            # Limpar recurso mss
             self.sct.close()
 
 def main():

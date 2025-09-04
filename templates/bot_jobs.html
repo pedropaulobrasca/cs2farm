@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h2>Trabalhos de Bot</h2>
+    <a href="/bot-jobs/create" class="btn btn-success">+ Novo Trabalho</a>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Trabalhos Ativos</h5>
+            </div>
+            <div class="card-body">
+                {% if jobs %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Bot</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job_id, job in jobs.items() %}
+                            <tr>
+                                <td>{{ job_id[:8] }}...</td>
+                                <td>
+                                    {% if vms[job.bot_id] %}
+                                    {{ vms[job.bot_id].name }}
+                                    {% else %}
+                                    {{ job.bot_id[:8] }}...
+                                    {% endif %}
+                                </td>
+                                <td>{{ job.type }}</td>
+                                <td>
+                                    {% if job.status == 'pending' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                    {% elif job.status == 'running' %}
+                                    <span class="badge bg-primary">Executando</span>
+                                    {% elif job.status == 'completed' %}
+                                    <span class="badge bg-success">Concluído</span>
+                                    {% elif job.status == 'failed' %}
+                                    <span class="badge bg-danger">Falhou</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ job.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ job.created_at }}</td>
+                                <td>
+                                    <form method="POST" style="display: inline;">
+                                        <button formaction="/bot-jobs/delete/{{ job_id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?')">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center">
+                    <p>Nenhum trabalho encontrado.</p>
+                    <a href="/bot-jobs/create" class="btn btn-success">Criar primeiro trabalho</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

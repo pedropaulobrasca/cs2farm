@@ -17,8 +17,8 @@ import sys
 
 # Kendi modüllerimizi import ediyoruz
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from cs2_aimbot import CS2Aimbot
-from cs2_advanced_bot import CS2AdvancedBot
+# from cs2_aimbot import CS2Aimbot  # Comentado temporariamente
+# from cs2_advanced_bot import CS2AdvancedBot  # Comentado temporariamente
 
 # Logging ayarları
 logging.basicConfig(
@@ -356,7 +356,7 @@ class UserManager:
         # Kullanıcı adı kontrolü
         for user_id, user in users.items():
             if user['username'] == username:
-                return None  # Kullanıcı zaten var
+                return None  # Usuário já existe
         
         user_id = str(uuid.uuid4())
         users[user_id] = {
@@ -470,7 +470,7 @@ def login():
             login_user(user)
             return redirect(url_for('index'))
         
-        return render_template('login.html', error='Geçersiz kullanıcı adı veya şifre')
+        return render_template('login.html', error='Usuário ou senha inválidos')
     
     return render_template('login.html')
 

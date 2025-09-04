@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>CS2 Farm Control Panel</h1>
+        <p class="lead">Bem-vindo ao painel de controle do CS2 Farm!</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Gerentes de VM</h5>
+                <p class="card-text">Configure e gerencie suas máquinas virtuais.</p>
+                <a href="/managers" class="btn btn-primary">Gerenciar VMs</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Configuração de Bots</h5>
+                <p class="card-text">Configure os parâmetros dos bots de farm.</p>
+                <a href="/bots" class="btn btn-success">Configurar Bots</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Trabalhos</h5>
+                <p class="card-text">Monitore e gerencie os trabalhos ativos.</p>
+                <a href="/bot-jobs" class="btn btn-info">Ver Trabalhos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Status do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">0</h4>
+                            <small>VMs Ativas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-success">0</h4>
+                            <small>Bots Rodando</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-info">0</h4>
+                            <small>Trabalhos Pendentes</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-warning">0</h4>
+                            <small>XP Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

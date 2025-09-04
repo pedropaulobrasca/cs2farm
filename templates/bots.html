@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Configuração de Bots</h2>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Bots Disponíveis</h5>
+            </div>
+            <div class="card-body">
+                {% if vms %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>VM</th>
+                                <th>Status da Configuração</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vm_id, vm in vms.items() %}
+                            <tr>
+                                <td>{{ vm.name }} ({{ vm.ip }})</td>
+                                <td>
+                                    {% if bot_configs[vm_id] %}
+                                    <span class="badge bg-success">Configurado</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Não configurado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/bots/config/{{ vm_id }}" class="btn btn-sm btn-primary">Configurar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center">
+                    <p>Nenhuma VM disponível para configurar bots.</p>
+                    <a href="/managers/create" class="btn btn-success">Criar VM</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
