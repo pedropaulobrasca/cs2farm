@@ -66,15 +66,15 @@ class CS2Aimbot:
     def __init__(self, model_path=r"runs\detect\cs2_model2\weights\best.pt"):
         self.model_path = model_path
         self.model = None
-        self.confidence_threshold = 0.25  # Lower for more detections
+        self.confidence_threshold = 0.25  # Menor para mais detecções
         self.iou_threshold = 0.45
 
-        # Aiming settings (fine-tuned for high precision)
-        self.aim_smoothness = 2.0       # At least 2.0 to avoid division by zero
-        self.aim_speed = 0.8            # Lower speed to prevent whipping around
-        self.headshot_offset = -10      # Adjusted for better headshots
-        self.target_lock_threshold = 15  # More lenient threshold
-        self.aim_delay = 0.001          # Almost no delay
+        # Configurações de mira (ajustadas para alta precisão)
+        self.aim_smoothness = 2.0       # Pelo menos 2.0 para evitar divisão por zero
+        self.aim_speed = 0.8            # Velocidade menor para evitar movimentos bruscos
+        self.headshot_offset = -10      # Ajustado para melhores headshots
+        self.target_lock_threshold = 15  # Limite mais tolerante
+        self.aim_delay = 0.001          # Quase sem atraso
         
         # Shooting control
         self.auto_shoot = True          # Habilitar disparo automático
@@ -95,107 +95,107 @@ class CS2Aimbot:
                 [1, -2], [0, -2], [0, -2], [0, -2], [0, -2]
             ])
         }
-        self.current_weapon = "ak47"    # Default weapon pattern
+        self.current_weapon = "ak47"    # Padrão de arma padrão
         self.shots_fired = 0
         self.last_shot_time = 0
         self.recoil_control_active = True
-        self.recoil_recovery_time = 0.5  # Time after which recoil pattern resets
+        self.recoil_recovery_time = 0.5  # Tempo após o qual o padrão de recuo é resetado
 
-        # Burst fire settings
+        # Configurações de rajada
         self.burst_fire_enabled = True
-        self.burst_size = 4         # Shots per burst
-        self.burst_delay = 0.25     # Seconds between bursts
-        self.tap_fire_distance = 0.65  # Distance threshold for tap firing (0.0-1.0, percentage of screen)
+        self.burst_size = 4         # Tiros por rajada
+        self.burst_delay = 0.25     # Segundos entre rajadas
+        self.tap_fire_distance = 0.65  # Limite de distância para tiro único (0.0-1.0, porcentagem da tela)
         
-        # Target selection enhancements
+        # Melhorias na seleção de alvo
         self.priority_zones = {
-            "head": 1.0,            # Head priority multiplier
-            "upper_body": 0.8,      # Upper body priority multiplier
-            "center_screen": 0.7,   # Center of screen priority factor
-            "distance": 0.5,        # Distance factor (closer targets prioritized)
-            "movement": 0.3         # Moving target priority reduction
+            "head": 1.0,            # Multiplicador de prioridade da cabeça
+            "upper_body": 0.8,      # Multiplicador de prioridade do tronco superior
+            "center_screen": 0.7,   # Fator de prioridade do centro da tela
+            "distance": 0.5,        # Fator de distância (alvos mais próximos priorizados)
+            "movement": 0.3         # Redução de prioridade para alvos em movimento
         }
         
-        # Target tracking settings
-        self.target_memory = []     # Remember recent targets for tracking
-        self.memory_duration = 0.5  # How long to remember targets (seconds)
-        self.movement_prediction = True  # Enable movement prediction for moving targets
-        self.prediction_factor = 0.2     # How much to predict movement (0.0-1.0)
+        # Configurações de rastreamento de alvo
+        self.target_memory = []     # Lembrar alvos recentes para rastreamento
+        self.memory_duration = 0.5  # Por quanto tempo lembrar dos alvos (segundos)
+        self.movement_prediction = True  # Habilitar predição de movimento para alvos em movimento
+        self.prediction_factor = 0.2     # Quanto prever o movimento (0.0-1.0)
         
-        # Performance optimizations
-        self.using_tensorrt = False  # TensorRT optimization status
+        # Otimizações de desempenho
+        self.using_tensorrt = False  # Status da otimização TensorRT
         
-        # Initialize model with optimizations
+        # Inicializar modelo com otimizações
         self.load_model()
         
     def load_model(self):
-        """Load YOLOv8 model with optimizations for real-time inference"""
+        """Carregar modelo YOLOv8 com otimizações para inferência em tempo real"""
         try:
-            # Start with standard model
+            # Começar com modelo padrão
             self.model = YOLO(self.model_path)
             
-            # Try to optimize with TensorRT if available
+            # Tentar otimizar com TensorRT se disponível
             try:
                 import tensorrt
-                # Only export once, then load the optimized model
+                # Exportar apenas uma vez, depois carregar o modelo otimizado
                 engine_path = self.model_path.replace('.pt', '_tensorrt.engine')
                 if not os.path.exists(engine_path):
                     self.model.export(format='engine', imgsz=640, half=True)
                 self.model = YOLO(engine_path)
                 self.using_tensorrt = True
-                print(f"TensorRT optimization enabled for faster inference")
+                print(f"Otimização TensorRT habilitada para inferência mais rápida")
             except (ImportError, Exception) as e:
-                # Fall back to standard PyTorch if TensorRT fails
-                print(f"TensorRT optimization not available: {e}")
-                # Use half precision for better performance
+                # Voltar ao PyTorch padrão se TensorRT falhar
+                print(f"Otimização TensorRT não disponível: {e}")
+                # Usar meia precisão para melhor desempenho
                 self.model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
                 if torch.cuda.is_available():
-                    self.model.model.half()  # Use FP16 if GPU available
+                    self.model.model.half()  # Usar FP16 se GPU disponível
                     
-            print(f"Model loaded successfully: {self.model_path}")
+            print(f"Modelo carregado com sucesso: {self.model_path}")
         except Exception as e:
-            print(f"Error loading model: {e}")
+            print(f"Erro ao carregar modelo: {e}")
             self.model = None
     
     def preprocess_frame(self, frame):
-        """Preprocess frame for optimal detection"""
-        # Apply contrast enhancement to make targets more visible
-        # Creates a more robust detection in different lighting conditions
-        alpha = 1.1  # Contrast control (1.0 means no change)
-        beta = 5     # Brightness control (0 means no change)
+        """Pré-processar frame para detecção otimizada"""
+        # Aplicar melhoria de contraste para tornar alvos mais visíveis
+        # Cria uma detecção mais robusta em diferentes condições de iluminação
+        alpha = 1.1  # Controle de contraste (1.0 significa sem mudança)
+        beta = 5     # Controle de brilho (0 significa sem mudança)
         
-        # Apply brightness/contrast adjustment
+        # Aplicar ajuste de brilho/contraste
         adjusted = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
         
-        # Convert to RGB for YOLOv8
-        if frame.shape[2] == 4:  # BGRA format
+        # Converter para RGB para YOLOv8
+        if frame.shape[2] == 4:  # Formato BGRA
             frame_rgb = cv2.cvtColor(adjusted, cv2.COLOR_BGRA2RGB)
-        else:  # BGR format
+        else:  # Formato BGR
             frame_rgb = cv2.cvtColor(adjusted, cv2.COLOR_BGR2RGB)
             
         return frame_rgb
     
     def detect_targets(self, frame):
-        """Detect players in the frame using YOLOv8"""
+        """Detectar jogadores no frame usando YOLOv8"""
         if self.model is None:
             return []
             
-        # Preprocess the frame
+        # Pré-processar o frame
         processed_frame = self.preprocess_frame(frame)
         
-        # Run YOLOv8 inference with optimized settings
+        # Executar inferência YOLOv8 com configurações otimizadas
         results = self.model(
             processed_frame, 
             conf=self.confidence_threshold,
             iou=self.iou_threshold,
-            max_det=10,  # Limit detections for faster processing
+            max_det=10,  # Limitar detecções para processamento mais rápido
             verbose=False
         )[0]
         
-        # Extract and return detection data
+        # Extrair e retornar dados de detecção
         if len(results.boxes) > 0:
             return [{
-                "xyxy": box.xyxy[0].cpu().numpy(),  # Convert to numpy array
+                "xyxy": box.xyxy[0].cpu().numpy(),  # Converter para array numpy
                 "confidence": box.conf[0].item(),
                 "class_id": int(box.cls[0].item()),
                 "x1y1x2y2": [float(x) for x in box.xyxy[0].tolist()]
@@ -204,14 +204,14 @@ class CS2Aimbot:
             return []
     
     def select_best_target(self, targets, frame_width, frame_height, frame=None):
-        """Select the best target using multiple criteria for optimal accuracy"""
+        """Selecionar o melhor alvo usando múltiplos critérios para precisão otimizada"""
         if not targets:
             return None
             
-        # Center of screen coordinates
+        # Coordenadas do centro da tela
         center_x, center_y = frame_width // 2, frame_height // 2
         
-        # Enhanced scoring system for target selection
+        # Sistema de pontuação aprimorado para seleção de alvo
         scored_targets = []
         current_time = time.time()
         
@@ -225,72 +225,72 @@ class CS2Aimbot:
             # Debug imprimir cada alvo
             print(f"Alvo {i}: conf={confidence:.2f}, pos=({int(x1)},{int(y1)})→({int(x2)},{int(y2)})")
             
-            # Precise box center calculation
+            # Cálculo preciso do centro da caixa
             box_width = x2 - x1
             box_height = y2 - y1
             center_box_x = x1 + (box_width / 2)
             center_box_y = y1 + (box_height / 2)
             
-            # Head position estimation (upper 1/5 of the box for CS2 models)
-            head_pos_y = y1 + (box_height * 0.18)  # 18% from top, better for CS2
+            # Estimativa da posição da cabeça (1/5 superior da caixa para modelos CS2)
+            head_pos_y = y1 + (box_height * 0.18)  # 18% do topo, melhor para CS2
             
-            # Distance calculation
+            # Cálculo de distância
             dx_center = center_box_x - center_x
             dy_center = center_box_y - center_y
             distance_center = math.sqrt(dx_center**2 + dy_center**2)
             
-            # Distance from crosshair to head
+            # Distância da mira até a cabeça
             dx_head = center_box_x - center_x
             dy_head = head_pos_y - center_y
             distance_head = math.sqrt(dx_head**2 + dy_head**2)
             
-            # Normalize distances as percentage of screen dimensions
+            # Normalizar distâncias como porcentagem das dimensões da tela
             normalized_dist = distance_center / math.sqrt(frame_width**2 + frame_height**2)
             
-            # Size calculation (larger targets are closer and easier to hit)
+            # Cálculo de tamanho (alvos maiores são mais próximos e fáceis de acertar)
             box_size = box_width * box_height
             normalized_size = box_size / (frame_width * frame_height)
             
             # CS2: Quanto mais próximo do centro, maior a prioridade
             center_bonus = 1.0 - (normalized_dist * 2)  # Bônus de proximidade do centro
             
-            # Movement detection (if tracking is enabled)
+            # Detecção de movimento (se rastreamento estiver habilitado)
             movement_penalty = 0
             if self.target_memory and frame is not None:
-                # Check if this target matches any previous ones
+                # Verificar se este alvo coincide com algum anterior
                 for old_target in self.target_memory:
                     if current_time - old_target["time"] > self.memory_duration:
-                        continue  # Skip expired targets
+                        continue  # Pular alvos expirados
                         
                     old_x1, old_y1, old_x2, old_y2 = old_target["xyxy"]
                     old_center_x = old_x1 + ((old_x2 - old_x1) / 2)
                     old_center_y = old_y1 + ((old_y2 - old_y1) / 2)
                     
-                    # Check if it's the same target (by position overlap)
+                    # Verificar se é o mesmo alvo (por sobreposição de posição)
                     if (abs(center_box_x - old_center_x) < box_width * 0.5 and 
                         abs(center_box_y - old_center_y) < box_height * 0.5):
                         
-                        # Calculate movement speed
+                        # Calcular velocidade de movimento
                         movement_x = center_box_x - old_center_x
                         movement_y = center_box_y - old_center_y
                         movement_speed = math.sqrt(movement_x**2 + movement_y**2)
                         
-                        # Apply movement penalty to fast-moving targets
+                        # Aplicar penalidade de movimento a alvos em movimento rápido
                         movement_penalty = movement_speed * self.priority_zones["movement"]
                         break
             
             # Calcular pontuação de prioridade (menor é melhor) - otimizado para CS2
             # Equilibrar múltiplos fatores para seleção ótima de alvo
             priority_score = (
-                distance_head * 0.4 -                           # Head distance (primary factor)
-                normalized_size * 120 +                         # Size bonus (bigger targets better)
-                normalized_dist * 80 +                          # Distance penalty
-                (1.0 - confidence) * 50 +                       # Lower confidence penalty
-                movement_penalty -                              # Moving target penalty
-                center_bonus * 50                               # Center of screen bonus
+                distance_head * 0.4 -                           # Distância da cabeça (fator primário)
+                normalized_size * 120 +                         # Bônus de tamanho (alvos maiores melhores)
+                normalized_dist * 80 +                          # Penalidade de distância
+                (1.0 - confidence) * 50 +                       # Penalidade de baixa confiança
+                movement_penalty -                              # Penalidade de alvo em movimento
+                center_bonus * 50                               # Bônus do centro da tela
             )
             
-            # Store scored target
+            # Armazenar alvo pontuado
             scored_targets.append({
                 "index": i,
                 "target": target,
@@ -308,7 +308,7 @@ class CS2Aimbot:
                 "priority": priority_score
             })
             
-        # Sort targets by priority score (lower is better)
+        # Ordenar alvos por pontuação de prioridade (menor é melhor)
         scored_targets.sort(key=lambda t: t["priority"])
         
         if scored_targets:
@@ -316,7 +316,7 @@ class CS2Aimbot:
             print(f"Melhor alvo: {best['index']} com prioridade {best['priority']:.2f}")
             print(f"Distância da mira: {best['distance']:.2f} pixels")
         
-        # Update target memory for tracking
+        # Atualizar memória de alvo para rastreamento
         if scored_targets and self.movement_prediction:
             best_target = scored_targets[0]
             self.target_memory.append({
@@ -324,27 +324,27 @@ class CS2Aimbot:
                 "time": current_time
             })
             
-            # Remove old targets from memory
+            # Remover alvos antigos da memória
             self.target_memory = [t for t in self.target_memory 
                                 if current_time - t["time"] <= self.memory_duration]
         
         return scored_targets[0] if scored_targets else None
         
     def calculate_aim_point(self, target, frame_width, frame_height):
-        """Calculate precise aim point with headshot adjustment and prediction"""
-        # Basic calculations
+        """Calcular ponto de mira preciso com ajuste de headshot e predição"""
+        # Cálculos básicos
         center_x = target["center_x"]
         head_y = target["head_y"]
         
-        # Apply headshot offset (aim at head)
+        # Aplicar offset de headshot (mirar na cabeça)
         adjusted_y = head_y + self.headshot_offset
         
-        # Apply movement prediction if enabled
+        # Aplicar predição de movimento se habilitado
         if self.movement_prediction and len(self.target_memory) >= 2:
-            # Get current time for calculations
+            # Obter tempo atual para cálculos
             current_time = time.time()
             
-            # Get the two most recent positions of this target
+            # Obter as duas posições mais recentes deste alvo
             recent_positions = sorted(
                 [t for t in self.target_memory if current_time - t["time"] <= self.memory_duration],
                 key=lambda t: t["time"], 
@@ -352,115 +352,115 @@ class CS2Aimbot:
             )
             
             if len(recent_positions) >= 2:
-                # Calculate movement vector
+                # Calcular vetor de movimento
                 current = recent_positions[0]
                 previous = recent_positions[1]
                 
-                # Extract centers
+                # Extrair centros
                 current_x = current["xyxy"][0] + (current["xyxy"][2] - current["xyxy"][0]) / 2
                 current_y = current["xyxy"][1] + (current["xyxy"][3] - current["xyxy"][1]) / 2
                 previous_x = previous["xyxy"][0] + (previous["xyxy"][2] - previous["xyxy"][0]) / 2
                 previous_y = previous["xyxy"][1] + (previous["xyxy"][3] - previous["xyxy"][1]) / 2
                 
-                # Calculate velocity
+                # Calcular velocidade
                 time_diff = current["time"] - previous["time"]
                 if time_diff > 0:
                     velocity_x = (current_x - previous_x) / time_diff
                     velocity_y = (current_y - previous_y) / time_diff
                     
-                    # Predict future position (basic linear prediction)
-                    prediction_time = 0.1  # 100ms prediction
+                    # Prever posição futura (predição linear básica)
+                    prediction_time = 0.1  # Predição de 100ms
                     center_x += velocity_x * prediction_time * self.prediction_factor
                     adjusted_y += velocity_y * prediction_time * self.prediction_factor
         
-        # Calculate delta from screen center (where the crosshair is)
+        # Calcular delta do centro da tela (onde está a mira)
         delta_x = center_x - (frame_width // 2)
         delta_y = adjusted_y - (frame_height // 2)
         
         return delta_x, delta_y
         
     def mouse_move(self, dx, dy):
-        """CS2'ye doğrudan fare hareketi komutu gönder, kullanıcının imlecini etkileme"""
+        """Enviar comando de movimento do mouse diretamente para CS2, sem afetar o cursor do usuário"""
         if self.aim_smoothness <= 1.0:
-            # Simple direct movement
+            # Movimento direto simples
             move_x = int(dx * self.aim_speed)
             move_y = int(dy * self.aim_speed)
             InputEmulator.send_mouse_input_to_game(move_x, move_y)
             return
             
-        # Human-like adaptive smooth curve movement
+        # Movimento suave e adaptativo semelhante ao humano
         steps = int(self.aim_smoothness)
         # Prevenir erro de divisão por zero
         if steps <= 1:
             steps = 2  # Pelo menos 2 passos
         
-        # Bezier curve-like movement - more natural than linear
-        # Accelerates, then decelerates for human-like movement pattern
+        # Movimento semelhante à curva de Bezier - mais natural que linear
+        # Acelera, depois desacelera para padrão de movimento humano
         for i in range(steps):
-            # Bezier interpolation factor (accelerate then decelerate)
+            # Fator de interpolação de Bezier (acelerar depois desacelerar)
             t = i / (steps - 1)
-            bezier_factor = 4 * t * (1 - t)  # Equivalent to a quadratic bezier curve
+            bezier_factor = 4 * t * (1 - t)  # Equivalente a uma curva de Bezier quadrática
             
-            # Apply bezier curve to movement (faster in middle, slower at start/end)
+            # Aplicar curva de Bezier ao movimento (mais rápido no meio, mais lento no início/fim)
             move_factor = bezier_factor * self.aim_speed
             
-            # Calculate step size with bezier factor
+            # Calcular tamanho do passo com fator de Bezier
             step_x = int((dx / steps) * move_factor)
             step_y = int((dy / steps) * move_factor)
             
-            # Skip movements that are too small (0 pixels)
+            # Pular movimentos muito pequenos (0 pixels)
             if abs(step_x) < 1 and abs(step_y) < 1:
                 continue
                 
-            # Vary individual step slightly for more human-like movement
-            rand_factor = 0.05  # 5% randomness
+            # Variar cada passo ligeiramente para movimento mais humano
+            rand_factor = 0.05  # 5% de aleatoriedade
             rand_x = int(step_x * (1 + (np.random.random() - 0.5) * rand_factor))
             rand_y = int(step_y * (1 + (np.random.random() - 0.5) * rand_factor))
             
-            # Apply mouse movement directly to game
+            # Aplicar movimento do mouse diretamente ao jogo
             InputEmulator.send_mouse_input_to_game(rand_x, rand_y)
             
-            # Adaptive sleep time (slightly randomized for natural movement)
+            # Tempo de espera adaptativo (ligeiramente aleatorizado para movimento natural)
             sleep_time = 0.001 * (1 + (np.random.random() - 0.5) * 0.3)
             time.sleep(sleep_time)
     
     def mouse_click(self):
-        """Simulate mouse click with human-like timing and behavior"""
+        """Simular clique do mouse com tempo e comportamento humanos"""
         now = time.time()
         self.shots_fired += 1
         self.last_shot_time = now
         
-        # Realistic press and release times
-        press_time = 0.02 + (np.random.random() * 0.03)  # 20-50ms press time
+        # Tempos realistas de pressionar e soltar
+        press_time = 0.02 + (np.random.random() * 0.03)  # Tempo de pressão 20-50ms
         
-        # Fire directly into the game
+        # Atirar diretamente no jogo
         InputEmulator.send_mouse_input_to_game(0, 0, "left")
     
     def apply_recoil_control(self):
-        """Apply recoil compensation based on weapon pattern and shots fired"""
+        """Aplicar compensação de recuo baseada no padrão da arma e tiros disparados"""
         if not self.recoil_control_active or self.shots_fired == 0:
             return
             
-        # Reset recoil counter if we haven't fired for a while
+        # Resetar contador de recuo se não atirarmos por um tempo
         now = time.time()
         if now - self.last_shot_time > self.recoil_recovery_time:
             self.shots_fired = 0
             return
             
-        # Get correct recoil pattern for current weapon
+        # Obter padrão de recuo correto para arma atual
         pattern = self.recoil_patterns.get(self.current_weapon, self.recoil_patterns["ak47"])
         
-        # Apply the corresponding recoil compensation if within pattern range
+        # Aplicar compensação de recuo correspondente se dentro do alcance do padrão
         if self.shots_fired <= len(pattern):
-            # Get the recoil vector for current shot
+            # Obter vetor de recuo para tiro atual
             recoil_x, recoil_y = pattern[self.shots_fired - 1]
             
-            # Apply compensation (negative of recoil)
+            # Aplicar compensação (negativo do recuo)
             InputEmulator.send_mouse_input_to_game(recoil_x, recoil_y)
     
     def should_fire(self, target, frame_width, frame_height):
-        """Determine if we should fire based on multiple tactical factors"""
-        # Never fire if no target
+        """Determinar se devemos atirar baseado em múltiplos fatores táticos"""
+        # Nunca atirar se não houver alvo
         if not target:
             return False
             
@@ -468,28 +468,28 @@ class CS2Aimbot:
         precise_aim = (abs(target["dx_head"]) < self.target_lock_threshold * 1.5 and 
                       abs(target["dy_head"]) < self.target_lock_threshold * 1.5)
         
-        # If burst fire is enabled, apply burst logic
+        # Se rajada estiver habilitada, aplicar lógica de rajada
         if self.burst_fire_enabled:
             now = time.time()
             
-            # Check if target is far away (use normalized distance)
+            # Verificar se alvo está longe (usar distância normalizada)
             is_distant_target = target["normalized_dist"] > self.tap_fire_distance
             
             if is_distant_target:
-                # For distant targets, use tap firing (more accurate)
+                # Para alvos distantes, usar tiro único (mais preciso)
                 if now - self.last_shot_time < 0.25:  # Mais rápido (era 0.4)
                     return False
             else:
-                # For closer targets, use burst fire
+                # Para alvos próximos, usar rajada
                 if self.shots_fired >= self.burst_size:
-                    # Wait for burst delay before firing again
+                    # Esperar atraso da rajada antes de atirar novamente
                     if now - self.last_shot_time < self.burst_delay * 0.7:  # Mais rápido
                         return False
                     else:
-                        # Reset burst counter after delay
+                        # Resetar contador de rajada após atraso
                         self.shots_fired = 0
         
-        # Return final decision
+        # Retornar decisão final
         return precise_aim
     
     def aim_at_target(self, frame, return_annotated=False):
@@ -589,7 +589,7 @@ if __name__ == "__main__":
     # Detectar mais objetos com limite de confiança baixo
     aimbot.confidence_threshold = 0.25
     
-    # Screen capture setup
+    # Configuração de captura de tela
     sct = mss.mss()
     monitor = {
         "top": 0, 
@@ -598,13 +598,13 @@ if __name__ == "__main__":
         "height": 1080
     }
     
-    # Control variables
+    # Variáveis de controle
     running = True
     aimbot_enabled = True
     debug_mode = True
     directinput_mode = True  # Modo de envio de entrada direta para o jogo
     
-    # Main loop
+    # Loop principal
     try:
         print("Aimbot executando... Pressione Ctrl+C para parar")
         print("Aguardando janela do CS2...")
@@ -619,7 +619,7 @@ if __name__ == "__main__":
             else:
                 print(f"Janela do CS2 encontrada (HWND: {cs2_hwnd})")
             
-            # Check keyboard controls
+            # Verificar controles do teclado
             if keyboard.is_pressed('f1'):
                 aimbot_enabled = not aimbot_enabled
                 print(f"Aimbot {'habilitado' if aimbot_enabled else 'desabilitado'}")
