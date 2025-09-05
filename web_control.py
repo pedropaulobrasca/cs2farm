@@ -131,11 +131,17 @@ class VMManager:
         vm = vms[vm_id]
         if vm['type'] == 'hyperv':
             try:
-                # Hyper-V VM başlatma
-                subprocess.run(['powershell', '-Command', f"Start-VM -Name '{vm['name']}'"], check=True)
-                VMManager.update_vm_status(vm_id, 'starting')
-                logger.info(f"VM {vm['name']} starting...")
-                return True
+                # Verificar se estamos no WSL (modo desenvolvimento)
+                if platform.system() == 'Linux' and 'microsoft' in platform.release().lower():
+                    logger.info(f"Modo desenvolvimento WSL: Simulando início da VM {vm['name']}")
+                    VMManager.update_vm_status(vm_id, 'running')
+                    return True
+                else:
+                    # Hyper-V VM başlatma (Windows nativo)
+                    subprocess.run(['powershell', '-Command', f"Start-VM -Name '{vm['name']}'"], check=True)
+                    VMManager.update_vm_status(vm_id, 'starting')
+                    logger.info(f"VM {vm['name']} starting...")
+                    return True
             except Exception as e:
                 logger.error(f"Error starting VM {vm['name']}: {str(e)}")
                 return False
@@ -149,6 +155,12 @@ class VMManager:
         
         vm = vms[vm_id]
         if vm['type'] == 'hyperv':
+            # Verificar se estamos no WSL (modo desenvolvimento)
+            if platform.system() == 'Linux' and 'microsoft' in platform.release().lower():
+                logger.info(f"Modo desenvolvimento WSL: Simulando parada da VM {vm['name']}")
+                VMManager.update_vm_status(vm_id, 'stopped')
+                return True
+            
             try:
                 # Hyper-V VM durdurma
                 subprocess.run(['powershell', '-Command', f"Stop-VM -Name '{vm['name']}' -Force"], check=True)
