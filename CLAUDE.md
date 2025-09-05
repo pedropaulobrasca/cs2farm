@@ -12,20 +12,47 @@ This is a CS2 (Counter-Strike 2) bot farming system with three main components:
 
 ## Development Setup
 
-### Server Development
+### Ambiente de Desenvolvimento WSL + Windows
+
+Este projeto suporta desenvolvimento híbrido onde:
+- **Claude Code** funciona no WSL (Linux) para desenvolvimento
+- **Aplicação completa** roda no Windows nativo para teste com Hyper-V
+
+#### Configuração no WSL (Desenvolvimento)
 ```bash
-# Install web panel dependencies
+# No WSL - para usar Claude Code
+cd /home/peter/projetos/cs2farm
+python3 -m venv venv
+source venv/bin/activate
 pip install Flask flask-login werkzeug psutil requests
-
-# Start web server (default port 8000)
-python web_control.py
-
-# Access at http://localhost:8000 (admin/admin)
+python web_control.py  # Modo desenvolvimento (simula VMs do Hyper-V)
+# Acesso: http://localhost:8000 (admin/admin)
 ```
+
+#### Sincronização para Windows (Testes)
+```bash
+# No WSL - sincronizar arquivos para Windows
+./sync_to_windows.sh
+```
+
+```powershell
+# No Windows PowerShell (executar como ADMINISTRADOR!)
+cd C:\Users\Peter\Projetos\cs2farm
+python -m venv venv_windows
+venv_windows\Scripts\activate
+pip install -r requirements_windows.txt
+python web_control.py  # Modo produção (VMs reais do Hyper-V)
+```
+
+### Fluxo de Desenvolvimento
+1. **Desenvolver no WSL** com Claude Code
+2. **Sincronizar** com `./sync_to_windows.sh`  
+3. **Testar no Windows** como Administrador para Hyper-V
+4. **Repetir** conforme necessário
 
 ### Bot Development  
 ```bash
-# Install bot dependencies
+# Install bot dependencies (apenas Windows)
 pip install ultralytics opencv-python numpy pyautogui keyboard mss torch pywin32 requests psutil
 
 # Test individual bots
@@ -91,6 +118,13 @@ venv\Scripts\activate     # Windows
 - Uses direct input emulation to avoid affecting user's mouse cursor
 - YOLOv8 model training required for optimal target detection
 - Web panel runs on port 8000 by default
+
+### WSL Compatibility Features
+- Automatic WSL environment detection (`platform.system() == 'Linux' and 'microsoft' in platform.release().lower()`)
+- VM operations simulated in WSL development mode
+- Script `sync_to_windows.sh` for easy project synchronization
+- Separate requirements files for WSL (`requirements.txt`) and Windows (`requirements_windows.txt`)
+- Enhanced error messages for permission issues when running without Administrator privileges
 
 ## Development Patterns
 

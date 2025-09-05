@@ -39,7 +39,39 @@ O projeto consiste em três componentes principais:
 
 ## Instalação
 
-### Servidor (Painel de Controle Web)
+### Desenvolvimento WSL + Windows (Recomendado)
+
+Este projeto suporta desenvolvimento híbrido para aproveitar o melhor dos dois ambientes:
+
+#### WSL (Desenvolvimento com Claude Code)
+```bash
+# No WSL Ubuntu
+cd /home/peter/projetos/cs2farm
+python3 -m venv venv
+source venv/bin/activate
+pip install Flask flask-login werkzeug psutil requests
+python web_control.py  # Modo desenvolvimento (simula VMs)
+```
+Acesse: `http://localhost:8000` (admin/admin)
+
+#### Windows (Testes com Hyper-V Real)
+```bash
+# No WSL - sincronizar projeto
+./sync_to_windows.sh
+```
+
+```powershell
+# No Windows PowerShell (EXECUTAR COMO ADMINISTRADOR!)
+cd C:\Users\Peter\Projetos\cs2farm
+python -m venv venv_windows
+venv_windows\Scripts\activate
+pip install -r requirements_windows.txt
+python web_control.py  # Modo produção (VMs reais)
+```
+
+⚠️ **IMPORTANTE**: PowerShell deve ser executado como **Administrador** para gerenciar VMs do Hyper-V!
+
+### Servidor (Painel de Controle Web) - Instalação Tradicional
 
 1. Instale as dependências:
 ```bash

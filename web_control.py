@@ -138,7 +138,17 @@ class VMManager:
                     return True
                 else:
                     # Hyper-V VM başlatma (Windows nativo)
-                    subprocess.run(['powershell', '-Command', f"Start-VM -Name '{vm['name']}'"], check=True)
+                    # Verificar se tem permissões de administrador
+                    result = subprocess.run(['powershell', '-Command', f"Start-VM -Name '{vm['name']}'"], 
+                                          capture_output=True, text=True)
+                    if result.returncode != 0:
+                        if "required permission" in result.stderr or "authorization policy" in result.stderr:
+                            logger.error(f"Erro de permissão: Execute o PowerShell como Administrador para gerenciar VMs")
+                            raise Exception("Permissão negada: Execute como Administrador")
+                        else:
+                            logger.error(f"Erro ao iniciar VM: {result.stderr}")
+                            raise Exception(result.stderr)
+                    
                     VMManager.update_vm_status(vm_id, 'starting')
                     logger.info(f"VM {vm['name']} starting...")
                     return True
